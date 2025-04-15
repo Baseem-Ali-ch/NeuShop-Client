@@ -11,7 +11,7 @@ import SocialLoginButtons from "@/components/molecules/auth/social-login-buttons
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
 
-export default function LoginForm() {
+export default function AdminLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +37,7 @@ export default function LoginForm() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/auth/login`,
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/auth/login`,
         {
           method: "POST",
           headers: {
@@ -47,14 +47,14 @@ export default function LoginForm() {
         }
       );
       const result = await response.json();
-      localStorage.setItem("access_token", result.accessToken);
+      localStorage.setItem("admin_access_token", result.accessToken);
 
       if (!response.ok) {
         setError(result.message || "An error occurred. Please try again.");
         return;
       } else {
-        localStorage.setItem('is_loggedIn', 'true');
-        router.push("/account");
+        localStorage.setItem('is_admin_loggedIn', 'true');
+        router.push("/admin");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");

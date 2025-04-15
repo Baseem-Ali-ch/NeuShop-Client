@@ -1,83 +1,87 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { ShoppingBag } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface OrderSummaryProps {
-  subtotal: number
+  subtotal: number;
 }
 
 export default function OrderSummary({ subtotal }: OrderSummaryProps) {
-  const router = useRouter()
-  const [shippingMethod, setShippingMethod] = useState("standard")
-  const [couponCode, setCouponCode] = useState("")
-  const [discount, setDiscount] = useState(0)
-  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
-  const [couponError, setCouponError] = useState("")
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const router = useRouter();
+  const [shippingMethod, setShippingMethod] = useState("standard");
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Calculate shipping cost based on selected method
   const getShippingCost = () => {
     switch (shippingMethod) {
       case "express":
-        return 12.99
+        return 12.99;
       case "nextDay":
-        return 19.99
+        return 19.99;
       case "standard":
       default:
-        return subtotal >= 100 ? 0 : 5.99
+        return subtotal >= 100 ? 0 : 5.99;
     }
-  }
+  };
 
   // Calculate tax (example: 8%)
-  const tax = subtotal * 0.08
+  const tax = subtotal * 0.08;
 
   // Calculate total
-  const total = subtotal + getShippingCost() + tax - discount
+  const total = subtotal + getShippingCost() + tax - discount;
 
   // Handle coupon application
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) {
-      setCouponError("Please enter a coupon code")
-      return
+      setCouponError("Please enter a coupon code");
+      return;
     }
 
-    setIsApplyingCoupon(true)
-    setCouponError("")
+    setIsApplyingCoupon(true);
+    setCouponError("");
 
     // Simulate API call to validate coupon
     setTimeout(() => {
       if (couponCode.toUpperCase() === "NEOSHOP20") {
-        const discountAmount = subtotal * 0.2
-        setDiscount(discountAmount)
-        setCouponError("")
+        const discountAmount = subtotal * 0.2;
+        setDiscount(discountAmount);
+        setCouponError("");
       } else {
-        setDiscount(0)
-        setCouponError("Invalid coupon code")
+        setDiscount(0);
+        setCouponError("Invalid coupon code");
       }
-      setIsApplyingCoupon(false)
-    }, 1000)
-  }
+      setIsApplyingCoupon(false);
+    }, 1000);
+  };
 
   // Handle checkout
   const handleCheckout = () => {
-    setIsCheckingOut(true)
+    setIsCheckingOut(true);
     // Simulate redirect to checkout page
     setTimeout(() => {
-      router.push("/checkout")
-    }, 1000)
-  }
+      router.push("/checkout");
+    }, 1000);
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 border-4 border-black dark:border-gray-700 p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)]">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Order Summary</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        Order Summary
+      </h2>
 
       {/* Subtotal */}
       <div className="flex justify-between py-3 border-b-2 border-dashed border-gray-300 dark:border-gray-700">
         <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-        <span className="font-medium text-gray-900 dark:text-white">${subtotal.toFixed(2)}</span>
+        <span className="font-medium text-gray-900 dark:text-white">
+          ${subtotal?.toFixed(2)}
+        </span>
       </div>
 
       {/* Shipping Options */}
@@ -85,7 +89,9 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
         <div className="flex items-center justify-between mb-3">
           <span className="text-gray-600 dark:text-gray-400">Shipping</span>
           <span className="font-medium text-gray-900 dark:text-white">
-            {getShippingCost() === 0 ? "Free" : `$${getShippingCost().toFixed(2)}`}
+            {getShippingCost() === 0
+              ? "Free"
+              : `$${getShippingCost().toFixed(2)}`}
           </span>
         </div>
 
@@ -100,8 +106,12 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
               className="mr-2 accent-[#FF6B6B]"
             />
             <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">Standard Shipping</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">3-5 business days</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                Standard Shipping
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                3-5 business days
+              </div>
             </div>
             <span className="text-sm font-medium text-gray-900 dark:text-white">
               {subtotal >= 100 ? "Free" : "$5.99"}
@@ -118,10 +128,16 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
               className="mr-2 accent-[#FF6B6B]"
             />
             <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">Express Shipping</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">1-2 business days</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                Express Shipping
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                1-2 business days
+              </div>
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">$12.99</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              $12.99
+            </span>
           </label>
 
           <label className="flex items-center">
@@ -134,10 +150,16 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
               className="mr-2 accent-[#FF6B6B]"
             />
             <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">Next Day Delivery</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Next business day</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                Next Day Delivery
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Next business day
+              </div>
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">$19.99</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              $19.99
+            </span>
           </label>
         </div>
       </div>
@@ -145,7 +167,9 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
       {/* Tax */}
       <div className="flex justify-between py-3 border-b-2 border-dashed border-gray-300 dark:border-gray-700">
         <span className="text-gray-600 dark:text-gray-400">Estimated Tax</span>
-        <span className="font-medium text-gray-900 dark:text-white">${tax.toFixed(2)}</span>
+        <span className="font-medium text-gray-900 dark:text-white">
+          ${tax.toFixed(2)}
+        </span>
       </div>
 
       {/* Coupon Code */}
@@ -174,14 +198,22 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
           </button>
         </div>
 
-        {couponError && <p className="mt-2 text-sm text-red-500 dark:text-red-400">{couponError}</p>}
+        {couponError && (
+          <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+            {couponError}
+          </p>
+        )}
 
-        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Try code: NEOSHOP20 for 20% off</p>
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          Try code: NEOSHOP20 for 20% off
+        </p>
       </div>
 
       {/* Total */}
       <div className="flex justify-between py-4 mb-6">
-        <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-white">
+          Total
+        </span>
         <motion.span
           key={total}
           initial={{ scale: 1.2 }}
@@ -215,5 +247,5 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
         Taxes and shipping calculated at checkout
       </div>
     </div>
-  )
+  );
 }

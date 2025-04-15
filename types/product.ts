@@ -4,11 +4,11 @@ export interface Product {
   description: string
   price: number
   salePrice?: number
-  rating: number
-  reviewCount: number
+  rating?: number
+  reviewCount?: number
   image: string
   category: string
-  date: string
+  date?: string
   isNew?: boolean
   colors?: string[]
   sizes?: string[]

@@ -1,26 +1,46 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Image from "next/image"
-import { X, Upload, Plus, Trash2, DollarSign, Package } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import Image from "next/image";
+import { X, Upload, Plus, Trash2, DollarSign, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ProductModalProps {
-  isOpen: boolean
-  onClose: () => void
-  product: any | null
-  mode: "add" | "edit"
+  isOpen: boolean;
+  onClose: () => void;
+  product: any | null;
+  mode: "add" | "edit";
 }
 
 // Mock categories for the demo
@@ -30,7 +50,7 @@ const categories = [
   { id: 3, name: "Home & Kitchen" },
   { id: 4, name: "Beauty & Personal Care" },
   { id: 5, name: "Sports & Outdoors" },
-]
+];
 
 // Mock brands for the demo
 const brands = [
@@ -39,213 +59,322 @@ const brands = [
   { id: 3, name: "Nike" },
   { id: 4, name: "Adidas" },
   { id: 5, name: "Sony" },
-]
+];
 
-export default function ProductModal({ isOpen, onClose, product, mode }: ProductModalProps) {
-  const [activeTab, setActiveTab] = useState("basic")
+export default function ProductModal({
+  isOpen,
+  onClose,
+  product,
+  mode,
+}: ProductModalProps) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("basic");
   const [formData, setFormData] = useState(
-    product || {
-      name: "",
-      description: "",
-      sku: "",
-      brandId: "",
-      categoryId: "",
-      tags: [],
-      price: "",
-      salePrice: "",
-      costPerItem: "",
-      taxable: true,
-      stock: "",
-      lowStockThreshold: "5",
-      backorder: false,
-      images: [],
-      featuredImageIndex: 0,
-      variants: [],
-      metaTitle: "",
-      metaDescription: "",
-      slug: "",
-    },
-  )
+    product
+      ? {
+          name: product.name || "",
+          description: product.description || "",
+          sku: product.sku || "",
+          brandId: product.brandId || "",
+          categoryId: product.categoryId || "",
+          tags: product.tags || [],
+          price: product.price || "",
+          salePrice: product.salePrice || "",
+          costPerItem: product.costPerItem || "",
+          taxable: product.taxable !== undefined ? product.taxable : true,
+          stock: product.stock || "",
+          lowStockThreshold: product.lowStockThreshold || "5",
+          backorder: product.backorder || false,
+          imageFiles: [], // Always initialize as empty array for new uploads
+          imagePreviews: product.images || [], // Use existing images for previews
+          featuredImageIndex: product.featuredImageIndex || 0,
+          variants: product.variants || [],
+          metaTitle: product.metaTitle || "",
+          metaDescription: product.metaDescription || "",
+          slug: product.slug || "",
+        }
+      : {
+          name: "",
+          description: "",
+          sku: "",
+          brandId: "",
+          categoryId: "",
+          tags: [],
+          price: "",
+          salePrice: "",
+          costPerItem: "",
+          taxable: true,
+          stock: "",
+          lowStockThreshold: "5",
+          backorder: false,
+          imageFiles: [],
+          imagePreviews: [],
+          featuredImageIndex: 0,
+          variants: [],
+          metaTitle: "",
+          metaDescription: "",
+          slug: "",
+        }
+  );
 
-  const [tagInput, setTagInput] = useState("")
-  const [variantTypes, setVariantTypes] = useState<string[]>([])
-  const [variantOptions, setVariantOptions] = useState<{ [key: string]: string[] }>({})
-  const [isDragging, setIsDragging] = useState(false)
+  const [tagInput, setTagInput] = useState("");
+  const [variantTypes, setVariantTypes] = useState<string[]>([]);
+  const [variantOptions, setVariantOptions] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
-    })
-  }
+    });
+  };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData({
       ...formData,
       [name]: value,
-    })
-  }
+    });
+  };
 
   const handleSwitchChange = (name: string, checked: boolean) => {
     setFormData({
       ...formData,
       [name]: checked,
-    })
-  }
+    });
+  };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && tagInput.trim()) {
-      e.preventDefault()
+      e.preventDefault();
       if (!formData.tags.includes(tagInput.trim())) {
         setFormData({
           ...formData,
           tags: [...formData.tags, tagInput.trim()],
-        })
+        });
       }
-      setTagInput("")
+      setTagInput("");
     }
-  }
+  };
 
   const handleRemoveTag = (tag: string) => {
     setFormData({
       ...formData,
       tags: formData.tags.filter((t) => t !== tag),
-    })
-  }
+    });
+  };
 
   const handleAddVariantType = () => {
-    setVariantTypes([...variantTypes, ""])
+    setVariantTypes([...variantTypes, ""]);
     setVariantOptions({
       ...variantOptions,
       ["new-type"]: [],
-    })
-  }
+    });
+  };
 
   const handleVariantTypeChange = (index: number, value: string) => {
-    const newVariantTypes = [...variantTypes]
-    const oldType = newVariantTypes[index]
-    newVariantTypes[index] = value
+    const newVariantTypes = [...variantTypes];
+    const oldType = newVariantTypes[index];
+    newVariantTypes[index] = value;
 
-    const newVariantOptions = { ...variantOptions }
+    const newVariantOptions = { ...variantOptions };
     if (oldType && newVariantOptions[oldType]) {
-      newVariantOptions[value] = newVariantOptions[oldType]
-      delete newVariantOptions[oldType]
+      newVariantOptions[value] = newVariantOptions[oldType];
+      delete newVariantOptions[oldType];
     } else {
-      newVariantOptions[value] = []
+      newVariantOptions[value] = [];
     }
 
-    setVariantTypes(newVariantTypes)
-    setVariantOptions(newVariantOptions)
-  }
+    setVariantTypes(newVariantTypes);
+    setVariantOptions(newVariantOptions);
+  };
 
   const handleAddVariantOption = (type: string) => {
     setVariantOptions({
       ...variantOptions,
       [type]: [...variantOptions[type], ""],
-    })
-  }
+    });
+  };
 
-  const handleVariantOptionChange = (type: string, index: number, value: string) => {
-    const newOptions = [...variantOptions[type]]
-    newOptions[index] = value
+  const handleVariantOptionChange = (
+    type: string,
+    index: number,
+    value: string
+  ) => {
+    const newOptions = [...variantOptions[type]];
+    newOptions[index] = value;
 
     setVariantOptions({
       ...variantOptions,
       [type]: newOptions,
-    })
-  }
+    });
+  };
 
   const handleRemoveVariantOption = (type: string, index: number) => {
     setVariantOptions({
       ...variantOptions,
       [type]: variantOptions[type].filter((_, i) => i !== index),
-    })
-  }
+    });
+  };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+    setIsDragging(false);
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
+    e.preventDefault();
+    setIsDragging(false);
 
-    // In a real app, you would handle file uploads here
-    // For this demo, we'll just add a placeholder image
     if (e.dataTransfer.files.length > 0) {
-      const newImages = [...formData.images]
+      const newFiles = formData.imageFiles ? [...formData.imageFiles] : [];
+      const newPreviews = formData.imagePreviews
+        ? [...formData.imagePreviews]
+        : [];
 
-      Array.from(e.dataTransfer.files).forEach(() => {
-        newImages.push("/assorted-products-display.png")
-      })
+      Array.from(e.dataTransfer.files).forEach((file) => {
+        newFiles.push(file);
+        const imageUrl = URL.createObjectURL(file);
+        newPreviews.push(imageUrl);
+      });
 
       setFormData({
         ...formData,
-        images: newImages,
-      })
+        imageFiles: newFiles,
+        imagePreviews: newPreviews,
+      });
     }
-  }
+  };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // In a real app, you would handle file uploads here
-    // For this demo, we'll just add a placeholder image
     if (e.target.files && e.target.files.length > 0) {
-      const newImages = [...formData.images]
+      const newFiles = formData.imageFiles ? [...formData.imageFiles] : [];
+      const newPreviews = formData.imagePreviews
+        ? [...formData.imagePreviews]
+        : [];
 
-      Array.from(e.target.files).forEach(() => {
-        newImages.push("/assorted-products-display.png")
-      })
+      Array.from(e.target.files).forEach((file) => {
+        newFiles.push(file);
+        const imageUrl = URL.createObjectURL(file);
+        newPreviews.push(imageUrl);
+      });
 
       setFormData({
         ...formData,
-        images: newImages,
-      })
+        imageFiles: newFiles,
+        imagePreviews: newPreviews,
+      });
     }
-  }
+  };
 
   const handleRemoveImage = (index: number) => {
-    const newImages = [...formData.images]
-    newImages.splice(index, 1)
+    const newFiles = formData.imageFiles ? [...formData.imageFiles] : [];
+    const newPreviews = formData.imagePreviews
+      ? [...formData.imagePreviews]
+      : [];
 
-    let newFeaturedIndex = formData.featuredImageIndex
+    if (newPreviews[index]) {
+      URL.revokeObjectURL(newPreviews[index]); // Clean up object URL
+    }
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+
+    let newFeaturedIndex = formData.featuredImageIndex;
     if (index === formData.featuredImageIndex) {
-      newFeaturedIndex = newImages.length > 0 ? 0 : -1
+      newFeaturedIndex = newPreviews.length > 0 ? 0 : -1;
     } else if (index < formData.featuredImageIndex) {
-      newFeaturedIndex--
+      newFeaturedIndex--;
     }
 
     setFormData({
       ...formData,
-      images: newImages,
+      imageFiles: newFiles,
+      imagePreviews: newPreviews,
       featuredImageIndex: newFeaturedIndex,
-    })
-  }
+    });
+  };
 
   const handleSetFeaturedImage = (index: number) => {
     setFormData({
       ...formData,
       featuredImageIndex: index,
-    })
-  }
+    });
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would submit the form data to your API
-    console.log("Form submitted:", formData)
-    onClose()
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+  
+    try {
+      const formDataToSend = new FormData();
+  
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("brandId", formData.brandId);
+      formDataToSend.append("categoryId", formData.categoryId);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("stock", formData.stock);
+  
+      if (formData.salePrice) {
+        formDataToSend.append("salePrice", formData.salePrice);
+      }
+  
+      // Append new files
+      (formData.imageFiles || []).forEach((file) => {
+        formDataToSend.append("images", file);
+      });
+  
+      // If editing, include existing image URLs (to preserve them)
+      if (mode === "edit" && formData.imagePreviews) {
+        formDataToSend.append(
+          "existingImages",
+          JSON.stringify(
+            formData.imagePreviews.filter((_, i) => formData.imageFiles[i] === undefined)
+          )
+        );
+      }
+  
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/product`,
+        {
+          method: mode === "add" ? "POST" : "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
+          },
+          body: formDataToSend,
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save product");
+      }
+  
+      const result = await response.json();
+      toast.success("Product saved successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save product");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSaveAsDraft = () => {
     // In a real app, you would save the product as a draft
-    console.log("Saved as draft:", formData)
-    onClose()
-  }
+    console.log("Saved as draft:", formData);
+    onClose();
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -254,7 +383,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
         className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl glassmorphism-modal overflow-y-auto"
       >
         <SheetHeader className="space-y-2 pr-10">
-          <SheetTitle>{mode === "add" ? "Add New Product" : "Edit Product"}</SheetTitle>
+          <SheetTitle>
+            {mode === "add" ? "Add New Product" : "Edit Product"}
+          </SheetTitle>
           <SheetDescription>
             {mode === "add"
               ? "Add a new product to your store. Fill in the details below."
@@ -269,8 +400,8 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
               <TabsTrigger value="inventory">Inventory</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
-              <TabsTrigger value="variants">Variants</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
+              {/* <TabsTrigger value="variants">Variants</TabsTrigger>
+              <TabsTrigger value="seo">SEO</TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4">
@@ -320,14 +451,19 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                     <Label htmlFor="brandId">Brand</Label>
                     <Select
                       value={formData.brandId.toString()}
-                      onValueChange={(value) => handleSelectChange("brandId", value)}
+                      onValueChange={(value) =>
+                        handleSelectChange("brandId", value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map((brand) => (
-                          <SelectItem key={brand.id} value={brand.id.toString()}>
+                          <SelectItem
+                            key={brand.id}
+                            value={brand.id.toString()}
+                          >
                             {brand.name}
                           </SelectItem>
                         ))}
@@ -342,7 +478,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                   </Label>
                   <Select
                     value={formData.categoryId.toString()}
-                    onValueChange={(value) => handleSelectChange("categoryId", value)}
+                    onValueChange={(value) =>
+                      handleSelectChange("categoryId", value)
+                    }
                     required
                   >
                     <SelectTrigger>
@@ -350,7 +488,10 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
+                        <SelectItem
+                          key={category.id}
+                          value={category.id.toString()}
+                        >
                           {category.name}
                         </SelectItem>
                       ))}
@@ -362,7 +503,11 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                   <Label htmlFor="tags">Tags</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {formData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
                         {tag}
                         <button
                           type="button"
@@ -389,7 +534,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
               <Card>
                 <CardHeader>
                   <CardTitle>Pricing Information</CardTitle>
-                  <CardDescription>Set your product pricing and tax information.</CardDescription>
+                  <CardDescription>
+                    Set your product pricing and tax information.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -460,7 +607,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                         <Switch
                           id="taxable"
                           checked={formData.taxable}
-                          onCheckedChange={(checked) => handleSwitchChange("taxable", checked)}
+                          onCheckedChange={(checked) =>
+                            handleSwitchChange("taxable", checked)
+                          }
                         />
                         <Label htmlFor="taxable" className="cursor-pointer">
                           This product is taxable
@@ -476,7 +625,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
               <Card>
                 <CardHeader>
                   <CardTitle>Inventory Management</CardTitle>
-                  <CardDescription>Manage your product stock and inventory settings.</CardDescription>
+                  <CardDescription>
+                    Manage your product stock and inventory settings.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,7 +649,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="lowStockThreshold">Low stock threshold</Label>
+                      <Label htmlFor="lowStockThreshold">
+                        Low stock threshold
+                      </Label>
                       <Input
                         id="lowStockThreshold"
                         name="lowStockThreshold"
@@ -519,10 +672,13 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                       <Switch
                         id="backorder"
                         checked={formData.backorder}
-                        onCheckedChange={(checked) => handleSwitchChange("backorder", checked)}
+                        onCheckedChange={(checked) =>
+                          handleSwitchChange("backorder", checked)
+                        }
                       />
                       <Label htmlFor="backorder" className="cursor-pointer">
-                        Allow customers to purchase this product when it's out of stock
+                        Allow customers to purchase this product when it's out
+                        of stock
                       </Label>
                     </div>
                   </div>
@@ -535,13 +691,16 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                 <CardHeader>
                   <CardTitle>Product Images</CardTitle>
                   <CardDescription>
-                    Upload and manage product images. The first image will be used as the featured image.
+                    Upload and manage product images. The first image will be
+                    used as the featured image.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div
                     className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                      isDragging ? "border-primary bg-primary/5" : "border-border"
+                      isDragging
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
                     }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -549,11 +708,20 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                   >
                     <div className="flex flex-col items-center">
                       <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                      <h3 className="text-lg font-medium">Drag and drop images here</h3>
-                      <p className="text-sm text-muted-foreground mb-4">or click to browse from your computer</p>
-                      <Button variant="outline" type="button" className="relative">
+                      <h3 className="text-lg font-medium">
+                        Drag and drop images here
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        or click to browse from your computer
+                      </p>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        className="relative"
+                      >
                         <input
                           type="file"
+                          name="images"
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                           onChange={handleFileInputChange}
                           multiple
@@ -564,18 +732,20 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                     </div>
                   </div>
 
-                  {formData.images.length > 0 && (
+                  {formData.imagePreviews.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-                      {formData.images.map((image, index) => (
+                      {formData.imagePreviews.map((image, index) => (
                         <div
                           key={index}
                           className={`relative group rounded-lg overflow-hidden border ${
-                            index === formData.featuredImageIndex ? "ring-2 ring-primary" : ""
+                            index === formData.featuredImageIndex
+                              ? "ring-2 ring-primary"
+                              : ""
                           }`}
                         >
                           <div className="relative aspect-square">
                             <Image
-                              src={image || "/placeholder.svg"}
+                              src={image}
                               alt={`Product image ${index + 1}`}
                               fill
                               className="object-cover"
@@ -604,7 +774,9 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
                             </Button>
                           </div>
                           {index === formData.featuredImageIndex && (
-                            <Badge className="absolute top-2 left-2">Featured</Badge>
+                            <Badge className="absolute top-2 left-2">
+                              Featured
+                            </Badge>
                           )}
                         </div>
                       ))}
@@ -614,167 +786,25 @@ export default function ProductModal({ isOpen, onClose, product, mode }: Product
               </Card>
             </TabsContent>
 
-            <TabsContent value="variants" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Variants</CardTitle>
-                  <CardDescription>
-                    Create variations of your product such as different sizes, colors, or materials.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-medium">Variant Types</h3>
-                      <Button type="button" variant="outline" size="sm" onClick={handleAddVariantType} className="h-8">
-                        <Plus className="h-4 w-4 mr-1" /> Add Variant Type
-                      </Button>
-                    </div>
-
-                    {variantTypes.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed rounded-lg">
-                        <p className="text-muted-foreground">
-                          No variant types added yet. Add a variant type like Size, Color, or Material.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {variantTypes.map((type, typeIndex) => (
-                          <div key={typeIndex} className="border rounded-lg p-4">
-                            <div className="flex justify-between items-center mb-4">
-                              <div className="flex-1 mr-4">
-                                <Label htmlFor={`variant-type-${typeIndex}`} className="mb-1 block">
-                                  Variant Type
-                                </Label>
-                                <Input
-                                  id={`variant-type-${typeIndex}`}
-                                  value={type}
-                                  onChange={(e) => handleVariantTypeChange(typeIndex, e.target.value)}
-                                  placeholder="e.g. Size, Color, Material"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddVariantOption(type)}
-                                className="h-8"
-                                disabled={!type}
-                              >
-                                <Plus className="h-4 w-4 mr-1" /> Add Option
-                              </Button>
-                            </div>
-
-                            {variantOptions[type]?.length > 0 ? (
-                              <div className="space-y-2">
-                                {variantOptions[type].map((option, optionIndex) => (
-                                  <div key={optionIndex} className="flex items-center gap-2">
-                                    <Input
-                                      value={option}
-                                      onChange={(e) => handleVariantOptionChange(type, optionIndex, e.target.value)}
-                                      placeholder={`e.g. ${
-                                        type === "Size"
-                                          ? "Small, Medium, Large"
-                                          : type === "Color"
-                                            ? "Red, Blue, Green"
-                                            : "Option value"
-                                      }`}
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleRemoveVariantOption(type, optionIndex)}
-                                      className="h-8 w-8"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                No options added yet. Add options for this variant type.
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="seo" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>SEO Settings</CardTitle>
-                  <CardDescription>Optimize your product for search engines.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="metaTitle">Meta Title</Label>
-                    <Input
-                      id="metaTitle"
-                      name="metaTitle"
-                      value={formData.metaTitle}
-                      onChange={handleInputChange}
-                      placeholder="Enter meta title"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {formData.metaTitle.length} / 60 characters recommended
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="metaDescription">Meta Description</Label>
-                    <Textarea
-                      id="metaDescription"
-                      name="metaDescription"
-                      value={formData.metaDescription}
-                      onChange={handleInputChange}
-                      placeholder="Enter meta description"
-                      rows={3}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {formData.metaDescription.length} / 160 characters recommended
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="slug">URL Slug</Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                        yourstore.com/products/
-                      </div>
-                      <Input
-                        id="slug"
-                        name="slug"
-                        value={formData.slug}
-                        onChange={handleInputChange}
-                        placeholder="product-url-slug"
-                        className="pl-[180px]"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="button" variant="secondary" onClick={handleSaveAsDraft}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSaveAsDraft}
+            >
               Save as Draft
             </Button>
-            <Button type="submit">{mode === "add" ? "Add Product" : "Save Changes"}</Button>
+            <Button type="submit">
+              {mode === "add" ? "Add Product" : "Save Changes"}
+            </Button>
           </div>
         </form>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

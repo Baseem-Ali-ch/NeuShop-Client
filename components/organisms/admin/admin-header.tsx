@@ -1,39 +1,51 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useDispatch, useSelector } from "react-redux"
-import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react"
-import { useTheme } from "next-themes"
-import type { RootState } from "@/store/store"
-import { toggleSidebar } from "@/store/slices/uiSlice"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useDispatch, useSelector } from "react-redux";
+import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { useTheme } from "next-themes";
+import type { RootState } from "@/store/store";
+import { toggleSidebar } from "@/store/slices/uiSlice";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 export default function AdminHeader() {
-  const dispatch = useDispatch()
-  const { theme, setTheme } = useTheme()
-  const [showNotifications, setShowNotifications] = useState(false)
-  const isSidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen)
+  const dispatch = useDispatch();
+  const { theme, setTheme } = useTheme();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const isSidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    localStorage.removeItem("admin_access_token");
+    localStorage.removeItem("is_admin_loggedIn");
+    window.location.href = "/admin/auth/login";
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => dispatch(toggleSidebar())}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2 md:hidden"
+            onClick={() => dispatch(toggleSidebar())}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -44,7 +56,10 @@ export default function AdminHeader() {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className={cn("transition-transform duration-200", isSidebarOpen ? "rotate-90" : "rotate-0")}
+              className={cn(
+                "transition-transform duration-200",
+                isSidebarOpen ? "rotate-90" : "rotate-0"
+              )}
             >
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />
@@ -68,13 +83,21 @@ export default function AdminHeader() {
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
-            <span className="font-bold text-xl hidden md:inline-block">LuxeCommerce</span>
+            <span className="font-bold text-xl hidden md:inline-block">
+              LuxeCommerce
+            </span>
           </Link>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm hidden md:inline-block">{theme === "dark" ? "Dark" : "Light"} Mode</span>
-            <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} className="neumorphic-switch" />
+            <span className="text-sm hidden md:inline-block">
+              {theme === "dark" ? "Dark" : "Light"} Mode
+            </span>
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={toggleTheme}
+              className="neumorphic-switch"
+            />
           </div>
 
           <div className="relative">
@@ -91,10 +114,15 @@ export default function AdminHeader() {
             </Button>
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-card rounded-md shadow-lg py-1 z-50 border border-border">
-                <div className="px-4 py-2 font-semibold border-b border-border">Notifications</div>
+                <div className="px-4 py-2 font-semibold border-b border-border">
+                  Notifications
+                </div>
                 <div className="max-h-96 overflow-y-auto">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="px-4 py-3 hover:bg-muted border-b border-border last:border-0">
+                    <div
+                      key={i}
+                      className="px-4 py-3 hover:bg-muted border-b border-border last:border-0"
+                    >
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mr-3">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -102,16 +130,25 @@ export default function AdminHeader() {
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">New order placed #{1000 + i}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Customer purchased Premium Headphones</p>
-                          <p className="text-xs text-muted-foreground mt-1">{i * 10} minutes ago</p>
+                          <p className="text-sm font-medium">
+                            New order placed #{1000 + i}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Customer purchased Premium Headphones
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {i * 10} minutes ago
+                          </p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="px-4 py-2 text-center border-t border-border">
-                  <Link href="/admin/notifications" className="text-sm text-primary hover:underline">
+                  <Link
+                    href="/admin/notifications"
+                    className="text-sm text-primary hover:underline"
+                  >
                     View all notifications
                   </Link>
                 </div>
@@ -121,7 +158,10 @@ export default function AdminHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                className="relative h-8 flex items-center space-x-2"
+              >
                 <div className="h-8 w-8 rounded-full overflow-hidden border border-border">
                   <Image
                     src="/abstract-user-icon.png"
@@ -132,7 +172,9 @@ export default function AdminHeader() {
                   />
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm font-medium hidden md:inline-block">Admin User</span>
+                  <span className="text-sm font-medium hidden md:inline-block">
+                    Admin User
+                  </span>
                   <ChevronDown className="h-4 w-4 ml-1" />
                 </div>
               </Button>
@@ -141,7 +183,9 @@ export default function AdminHeader() {
               <div className="flex items-center justify-start p-2">
                 <div className="flex flex-col space-y-1 leading-none">
                   <p className="font-medium">Admin User</p>
-                  <p className="text-sm text-muted-foreground">admin@example.com</p>
+                  <p className="text-sm text-muted-foreground">
+                    admin@example.com
+                  </p>
                 </div>
               </div>
               <DropdownMenuSeparator />
@@ -154,7 +198,7 @@ export default function AdminHeader() {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -163,5 +207,5 @@ export default function AdminHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

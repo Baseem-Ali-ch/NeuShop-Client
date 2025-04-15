@@ -23,7 +23,7 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
 
   // Generate gallery images (main image + variations)
   const galleryImages = [
-    product.image,
+    product.image[0] || "/placeholder.svg",
     ...Array(3)
       .fill(null)
       .map(
@@ -129,7 +129,9 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
         onTouchEnd={handleTouchEnd}
       >
         <Image
-          src={galleryImages[activeIndex] || "/placeholder.svg"}
+          src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
+            product.image || "/placeholder.svg"
+          }`}
           alt={product.name}
           fill
           className={cn(
@@ -220,7 +222,9 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
             aria-label={`View image ${index + 1}`}
           >
             <Image
-              src={image || "/placeholder.svg"}
+              src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
+                product.image || "/placeholder.svg"
+              }`}
               alt={`${product.name} - Thumbnail ${index + 1}`}
               fill
               className="object-cover"

@@ -14,7 +14,7 @@ import { products } from "@/data/products"
 
 export default function ShoppingCart() {
   const cartItems = useSelector((state: RootState) => state.cart.items)
-  const totalAmount = useSelector((state: RootState) => state.cart.totalAmount)
+  const totalAmount = useSelector((state: RootState) => state.cart.total)
   const dispatch = useDispatch()
   const [isClient, setIsClient] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
@@ -83,10 +83,10 @@ export default function ShoppingCart() {
         <EmptyCart />
       )}
 
-      {/* Suggested Products */}
+      {/* Suggested Products
       <div className="mt-20">
         <SuggestedProducts products={suggestedProducts} />
-      </div>
+      </div> */}
     </div>
   )
 }
