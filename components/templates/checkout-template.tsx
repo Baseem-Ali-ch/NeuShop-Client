@@ -17,7 +17,7 @@ export default function CheckoutTemplate() {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("customer")
   const [isClient, setIsClient] = useState(false)
   const cartItems = useSelector((state: RootState) => state.cart.items)
-  const totalAmount = useSelector((state: RootState) => state.cart.totalAmount)
+  const totalAmount = useSelector((state: RootState) => state.cart.total)
 
   // Customer information state
   const [customerInfo, setCustomerInfo] = useState({

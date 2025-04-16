@@ -10,6 +10,7 @@ import OrdersSection from "@/components/organisms/account/orders-section";
 import ProfileSettings from "@/components/organisms/account/profile-settings";
 import AddressesSection from "@/components/organisms/account/addresses-section";
 import PaymentMethodsSection from "@/components/organisms/account/payment-methods-section";
+import { useSearchParams } from "next/navigation";
 
 export type AccountSection =
   | "dashboard"
@@ -25,11 +26,19 @@ export default function AccountDashboard() {
   const [isClient, setIsClient] = useState(false);
   const isMobile = useMediaQuery("(max-width: 1024px)");
   const [user, setUser] = useState(null);
+  const searchParams = useSearchParams();
 
   // Fix hydration issues
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (section && ["dashboard", "orders", "profile", "addresses", "payment"].includes(section)) {
+      setActiveSection(section as AccountSection);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchUser = async () => {

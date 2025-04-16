@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { RootState } from "@/store/store";
+import { updateTotals } from "@/store/slices/cartSlice";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -18,6 +19,7 @@ export default function OrderSummary({
 }: OrderSummaryProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const dispatch = useDispatch();
 
   // Calculate shipping cost based on selected method
   const getShippingCost = () => {
@@ -37,6 +39,10 @@ export default function OrderSummary({
 
   // Calculate total
   const total = subtotal + getShippingCost() + tax;
+
+//   useEffect(() => {
+//     dispatch(updateTotals({ subtotal, total: subtotal + getShippingCost() + tax }));
+// }, [dispatch, subtotal]);
 
   // Auto-expand on desktop, collapse on mobile
   useEffect(() => {
@@ -89,7 +95,9 @@ export default function OrderSummary({
                   >
                     <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden flex-shrink-0">
                       <Image
-                        src={item.image || "/placeholder.svg"}
+                        src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
+                          item.image || "/placeholder.svg"
+                        }`}
                         alt={item.name}
                         fill
                         className="object-cover object-center"
