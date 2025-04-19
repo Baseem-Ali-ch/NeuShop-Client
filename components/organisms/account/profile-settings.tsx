@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
+import { updateUserDetails, updateUserPassword } from "@/lib/accountApi";
 
 // Form validation schemas
 const personalInfoSchema = z.object({
@@ -132,71 +133,35 @@ export default function ProfileSettings({ user }: { user: any }) {
     setIsSubmitting(true);
     setSuccessMessage("");
     setErrorMessage("");
-
-    try {
-      // Send updated data to the backend
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/user/data`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update user details.");
-      }
-
-      const result = await response.json();
-
+  
+    const result = await updateUserDetails(data);
+  
+    if (result.success) {
       setSuccessMessage("Your details have been updated successfully!");
-      console.log("Updated user details:", result);
-    } catch (error) {
-      // Handle error
-      setErrorMessage(
-        error instanceof Error ? error.message : "An unknown error occurred."
-      );
-    } finally {
-      setIsSubmitting(false);
+      console.log("Updated user details:", result.data);
+    } else {
+      setErrorMessage(result.message || "An unknown error occurred.");
     }
+  
+    setIsSubmitting(false);
   };
-
+  
   // Handle password submit
   const onPasswordSubmit = async (data: PasswordFormValues) => {
-    try {
-      // Send updated data to the backend
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/user/data/password`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update user password.");
-      }
-
-      const result = await response.json();
-
-      setSuccessMessage("Your password have been updated successfully!");
-      console.log("Updated user password:", result);
-    } catch (error) {
-      // Handle error
-      setErrorMessage(
-        error instanceof Error ? error.message : "An unknown error occurred."
-      );
-    } finally {
-      setIsSubmitting(false);
+    setIsSubmitting(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+  
+    const result = await updateUserPassword(data);
+  
+    if (result.success) {
+      setSuccessMessage("Your password has been updated successfully!");
+      console.log("Updated user password:", result.data);
+    } else {
+      setErrorMessage(result.message || "An unknown error occurred.");
     }
+  
+    setIsSubmitting(false);
   };
 
   return (
@@ -382,9 +347,9 @@ export default function ProfileSettings({ user }: { user: any }) {
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 >
                   {showCurrentPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="h-5 w-5 mt-5 text-gray-400" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="h-5 w-5 mt-5 text-gray-400" />
                   )}
                 </button>
                 {passwordErrors.currentPassword && (
@@ -419,9 +384,9 @@ export default function ProfileSettings({ user }: { user: any }) {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
                   {showNewPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="h-5 w-5 mt-5 text-gray-400" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="h-5 w-5 mt-5 text-gray-400" />
                   )}
                 </button>
                 {passwordErrors.newPassword && (
@@ -483,9 +448,9 @@ export default function ProfileSettings({ user }: { user: any }) {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="h-5 w-5 mt-5 text-gray-400" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="h-5 w-5 mt-5 text-gray-400" />
                   )}
                 </button>
                 {passwordErrors.confirmPassword && (

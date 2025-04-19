@@ -1,14 +1,23 @@
-"use client"
+"use client";
 
-import { User, ShoppingBag, Settings, MapPin, CreditCard, LogOut, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { AccountSection } from "@/components/templates/account-dashboard"
+import {
+  User,
+  ShoppingBag,
+  Settings,
+  MapPin,
+  CreditCard,
+  LogOut,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { AccountSection } from "@/components/templates/account-dashboard";
+import { logoutUser } from "@/lib/authApi";
 
 interface AccountNavigationProps {
-  activeSection: AccountSection
-  setActiveSection: (section: AccountSection) => void
-  isMobile: boolean
-  onClose: () => void
+  activeSection: AccountSection;
+  setActiveSection: (section: AccountSection) => void;
+  isMobile: boolean;
+  onClose: () => void;
 }
 
 export default function AccountNavigation({
@@ -43,19 +52,31 @@ export default function AccountNavigation({
       label: "Payment Methods",
       icon: CreditCard,
     },
-  ]
+  ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token")
-    localStorage.removeItem("is_loggedIn")
-    window.location.href = "/"
-  }
+  const handleLogout = async () => {
+    try {
+      const result = await logoutUser();
+
+      if (result.success) {
+        localStorage.removeItem("is_loggedIn");
+
+        window.location.href = "/";
+      } else {
+        console.log(result.message || "Failed to log out.");
+      }
+    } catch (error) {
+      console.log("An error occurred during logout:", error);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-[5px_5px_10px_rgba(0,0,0,0.05),-5px_-5px_10px_rgba(255,255,255,0.8)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.2),-5px_-5px_10px_rgba(255,255,255,0.05)]">
       {isMobile && (
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-medium text-gray-900 dark:text-white">Navigation</h2>
+          <h2 className="text-xl font-medium text-gray-900 dark:text-white">
+            Navigation
+          </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
@@ -78,11 +99,14 @@ export default function AccountNavigation({
           </button>
         ))}
 
-        <button className="w-full flex items-center px-4 py-3 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all" onClick={handleLogout}>
+        <button
+          className="w-full flex items-center px-4 py-3 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+          onClick={handleLogout}
+        >
           <LogOut className="h-5 w-5 mr-3" />
           <span>Log Out</span>
         </button>
       </nav>
     </div>
-  )
+  );
 }

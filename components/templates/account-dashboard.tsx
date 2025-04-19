@@ -11,6 +11,7 @@ import ProfileSettings from "@/components/organisms/account/profile-settings";
 import AddressesSection from "@/components/organisms/account/addresses-section";
 import PaymentMethodsSection from "@/components/organisms/account/payment-methods-section";
 import { useSearchParams } from "next/navigation";
+import { fetchUserDetails } from "@/lib/accountApi";
 
 export type AccountSection =
   | "dashboard"
@@ -25,7 +26,9 @@ export default function AccountDashboard() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const isMobile = useMediaQuery("(max-width: 1024px)");
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const searchParams = useSearchParams();
 
   // Fix hydration issues
@@ -35,28 +38,33 @@ export default function AccountDashboard() {
 
   useEffect(() => {
     const section = searchParams.get("section");
-    if (section && ["dashboard", "orders", "profile", "addresses", "payment"].includes(section)) {
+    if (
+      section &&
+      ["dashboard", "orders", "profile", "addresses", "payment"].includes(
+        section
+      )
+    ) {
       setActiveSection(section as AccountSection);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/user/data`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      setUser(data.user);
+    const getUserDetails = async () => {
+      setLoading(true);
+      setError("");
+
+      const result = await fetchUserDetails();
+
+      if (result.success) {
+        setUser(result.data.user);
+      } else {
+        setError(result.message || "Failed to load user details.");
+      }
+
+      setLoading(false);
     };
 
-    fetchUser();
+    getUserDetails();
   }, []);
 
   // Close nav when switching to desktop
@@ -121,11 +129,25 @@ export default function AccountDashboard() {
 
         {/* Main Content */}
         <div className="flex-1">
-          {activeSection === "dashboard" && <DashboardOverview user={user} />}
-          {activeSection === "orders" && <OrdersSection />}
-          {activeSection === "profile" && <ProfileSettings user={user} />}
-          {activeSection === "addresses" && <AddressesSection user={user} />}
-          {activeSection === "payment" && <PaymentMethodsSection />}
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-500">Loading...</p>
+            </div>
+          ) : (
+            <>
+              {activeSection === "dashboard" && (
+                <DashboardOverview user={user} />
+              )}
+              {activeSection === "orders" && <OrdersSection />}
+              {activeSection === "profile" && user && (
+                <ProfileSettings user={user} />
+              )}
+              {activeSection === "addresses" && (
+                <AddressesSection user={user} />
+              )}
+              {activeSection === "payment" && <PaymentMethodsSection />}
+            </>
+          )}
         </div>
       </div>
     </div>

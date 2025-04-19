@@ -12,6 +12,7 @@ import PasswordStrengthIndicator from "@/components/molecules/auth/password-stre
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
 import { constructFromSymbol } from "date-fns/constants";
+import { registerUser } from "@/lib/authApi";
 
 export default function RegisterForm() {
   const [firstName, setFirstName] = useState("");
@@ -46,6 +47,7 @@ export default function RegisterForm() {
     validatePassword(newPassword);
   };
 
+  // handle register submit functionality
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -73,20 +75,9 @@ export default function RegisterForm() {
         confirmPassword,
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/auth/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const result = await registerUser(formData);
 
-      const result = await response.json();
-
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.message || "Registration Failed");
       }
 

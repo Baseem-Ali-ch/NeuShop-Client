@@ -109,56 +109,33 @@ export default function Navbar() {
             {/* Account Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setIsAccountOpen(!isAccountOpen)}
+                onClick={() => {
+                  if (isLoggedIn) {
+                    window.location.href = "/account"; 
+                  } else {
+                    setIsAccountOpen(!isAccountOpen);
+                  }
+                }}
                 className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.1)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] dark:active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-2px_-2px_5px_rgba(255,255,255,0.1)]"
                 aria-label="Account menu"
               >
                 <User className="h-5 w-5 text-gray-700 dark:text-gray-200" />
               </button>
 
-              {isAccountOpen && (
+              {!isLoggedIn && isAccountOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white dark:bg-gray-800 shadow-lg py-2 z-10 shadow-[5px_5px_10px_rgba(0,0,0,0.05),-5px_-5px_10px_rgba(255,255,255,0.8)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.2),-5px_-5px_10px_rgba(255,255,255,0.05)]">
-                  {isLoggedIn ? (
-                    <>
-                      <Link
-                        href="/account"
-                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        My Account
-                      </Link>
-                      <Link
-                        href="/orders"
-                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        Orders
-                      </Link>
-                      <Link
-                        href="/wishlist"
-                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        Wishlist
-                      </Link>
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                      <button className="block w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/auth/login"
-                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        Log In
-                      </Link>
-                      <Link
-                        href="/auth/register"
-                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        Sign Up
-                      </Link>
-                    </>
-                  )}
+                  <Link
+                    href="/auth/login"
+                    className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Sign Up
+                  </Link>
                 </div>
               )}
             </div>

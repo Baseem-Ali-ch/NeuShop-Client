@@ -1,62 +1,48 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Home, Plus, Edit, Trash2, Check } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Home, Plus, Edit, Trash2, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { motion, AnimatePresence } from "framer-motion";
+import { Country, State } from "country-state-city";
+import {
+  deleteAddress,
+  fetchAddresses,
+  saveAddress,
+  setDefaultAddress,
+} from "@/lib/accountApi";
+import { Address } from "@/types/address";
+import { addressSchema } from "@/lib/schemad/addressSchema";
 
-// Form validation schema
-const addressSchema = z.object({
-  name: z.string().min(1, "Address name is required"),
-  addressLine1: z.string().min(1, "Address line 1 is required"),
-  addressLine2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State/Province is required"),
-  postalCode: z.string().min(1, "Postal code is required"),
-  country: z.string().min(1, "Country is required"),
-  isDefault: z.boolean().optional(),
-})
+type AddressFormValues = z.infer<typeof addressSchema>;
 
-type AddressFormValues = z.infer<typeof addressSchema>
+interface AddressesSectionProps {
+  user: { id: string };
+}
 
-// Mock addresses
-const mockAddresses = [
-  {
-    id: 1,
-    name: "Home",
-    addressLine1: "123 Main Street",
-    addressLine2: "Apt 4B",
-    city: "New York",
-    state: "NY",
-    postalCode: "10001",
-    country: "United States",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    name: "Work",
-    addressLine1: "456 Business Ave",
-    addressLine2: "Suite 200",
-    city: "San Francisco",
-    state: "CA",
-    postalCode: "94103",
-    country: "United States",
-    isDefault: false,
-  },
-]
-
-export default function AddressesSection() {
-  const [addresses, setAddresses] = useState(mockAddresses)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [editingAddressId, setEditingAddressId] = useState<number | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export default function AddressesSection({ user }: AddressesSectionProps) {
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [countries, setCountries] = useState<
+    { name: string; isoCode: string }[]
+  >([]);
+  const [states, setStates] = useState<{ name: string; isoCode: string }[]>([]);
 
   const {
     register,
@@ -64,6 +50,7 @@ export default function AddressesSection() {
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
@@ -73,98 +60,139 @@ export default function AddressesSection() {
       city: "",
       state: "",
       postalCode: "",
-      country: "United States",
+      country: "US",
+      phoneNumber: "",
       isDefault: false,
     },
-  })
+  });
+
+  // Fetch countries on mount
+  useEffect(() => {
+    const countryList = Country.getAllCountries().map((c) => ({
+      name: c.name,
+      isoCode: c.isoCode,
+    }));
+    setCountries(countryList);
+  }, []);
+
+  // Fetch addresses on mount
+  useEffect(() => {
+    const loadAddresses = async () => {
+      setIsLoading(true);
+      try {
+        // await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const data = await fetchAddresses();
+        setAddresses(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadAddresses();
+  }, [user?.id]);
+
+  // Update states when country changes
+  const countryWatch = watch("country");
+  useEffect(() => {
+    if (countryWatch) {
+      const stateList = State.getStatesOfCountry(countryWatch).map((s) => ({
+        name: s.name,
+        isoCode: s.isoCode,
+      }));
+      setStates(stateList);
+  
+      // Only reset the state field if not editing an address
+      if (!editingAddressId) {
+        setValue("state", ""); 
+      }
+    }
+  }, [countryWatch, setValue, editingAddressId]);
 
   // Start editing an address
-  const handleEdit = (address: any) => {
-    setEditingAddressId(address.id)
-    reset(address)
-    setShowAddForm(true)
-  }
+  const handleEdit = (address: Address) => {
+    setEditingAddressId(address._id);
+    reset(address);
+    setShowAddForm(true);
+  };
 
   // Delete an address
-  const handleDelete = (id: number) => {
-    setAddresses(addresses.filter((address) => address.id !== id))
-  }
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteAddress(id);
+      setAddresses(addresses.filter((address) => address._id !== id));
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Set an address as default
-  const handleSetDefault = (id: number) => {
-    setAddresses(
-      addresses.map((address) => ({
-        ...address,
-        isDefault: address.id === id,
-      })),
-    )
-  }
+  const handleSetDefault = async (id: number) => {
+    try {
+      console.log('id', id)
+      await setDefaultAddress(id);
+      setAddresses(
+        addresses.map((address) => ({
+          ...address,
+          isDefault: address._id === id,
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Handle form submission
-  const onSubmit = (data: AddressFormValues) => {
-    setIsSubmitting(true)
+  const onSubmit = async (data: AddressFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const updatedAddress = await saveAddress(data, editingAddressId);
 
-    // Simulate API call
-    setTimeout(() => {
       if (editingAddressId) {
-        // Update existing address
         setAddresses(
           addresses.map((address) => {
-            if (address.id === editingAddressId) {
-              return {
-                ...data,
-                id: editingAddressId,
-              }
+            if (address._id === editingAddressId) {
+              return updatedAddress;
             }
-            // If setting a new default, update other addresses
             if (data.isDefault && address.isDefault) {
-              return {
-                ...address,
-                isDefault: false,
-              }
+              return { ...address, isDefault: false };
             }
-            return address
-          }),
-        )
+            return address;
+          })
+        );
       } else {
-        // Add new address
-        const newAddress = {
-          ...data,
-          id: Math.max(0, ...addresses.map((a) => a.id)) + 1,
-        }
-
-        // If setting a new default, update other addresses
         if (data.isDefault) {
           setAddresses([
-            newAddress,
-            ...addresses.map((address) => ({
-              ...address,
-              isDefault: false,
-            })),
-          ])
+            updatedAddress,
+            ...addresses.map((address) => ({ ...address, isDefault: false })),
+          ]);
         } else {
-          setAddresses([newAddress, ...addresses])
+          setAddresses([updatedAddress, ...addresses]);
         }
       }
-
-      // Reset form and state
-      reset()
-      setShowAddForm(false)
-      setEditingAddressId(null)
-      setIsSubmitting(false)
-    }, 1500)
-  }
+      reset();
+      setShowAddForm(false);
+      setEditingAddressId(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-[5px_5px_10px_rgba(0,0,0,0.05),-5px_-5px_10px_rgba(255,255,255,0.8)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.2),-5px_-5px_10px_rgba(255,255,255,0.05)]">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-medium text-gray-900 dark:text-white">My Addresses</h1>
+          <h1 className="text-2xl font-medium text-gray-900 dark:text-white">
+            My Addresses
+          </h1>
           <Button
             onClick={() => {
-              reset()
-              setEditingAddressId(null)
-              setShowAddForm(!showAddForm)
+              reset();
+              setEditingAddressId(null);
+              setShowAddForm(!showAddForm);
             }}
             className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
           >
@@ -222,7 +250,10 @@ export default function AddressesSection() {
                       <Label htmlFor="country">
                         Country <span className="text-red-500">*</span>
                       </Label>
-                      <Select defaultValue="United States" onValueChange={(value) => setValue("country", value)}>
+                      <Select
+                        onValueChange={(value) => setValue("country", value)}
+                        defaultValue={watch("country")}
+                      >
                         <SelectTrigger
                           id="country"
                           className={`shadow-[inset_3px_3px_6px_rgba(0,0,0,0.05),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] dark:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.05)] ${
@@ -232,12 +263,14 @@ export default function AddressesSection() {
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="United States">United States</SelectItem>
-                          <SelectItem value="Canada">Canada</SelectItem>
-                          <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                          <SelectItem value="Australia">Australia</SelectItem>
-                          <SelectItem value="Germany">Germany</SelectItem>
-                          <SelectItem value="France">France</SelectItem>
+                          {countries.map((country) => (
+                            <SelectItem
+                              key={country.isoCode}
+                              value={country.isoCode}
+                            >
+                              {country.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       {errors.country && (
@@ -310,15 +343,31 @@ export default function AddressesSection() {
 
                     <div className="space-y-2">
                       <Label htmlFor="state">
-                        State/Province <span className="text-red-500">*</span>
+                        State <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        id="state"
-                        {...register("state")}
-                        className={`shadow-[inset_3px_3px_6px_rgba(0,0,0,0.05),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] dark:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.05)] ${
-                          errors.state ? "border-red-500" : ""
-                        }`}
-                      />
+                      <Select
+                        onValueChange={(value) => setValue("state", value)}
+                        defaultValue={watch("state")}
+                      >
+                        <SelectTrigger
+                          id="state"
+                          className={`shadow-[inset_3px_3px_6px_rgba(0,0,0,0.05),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] dark:shadow-[inset_3px_3x_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.05)] ${
+                            errors.state ? "border-red-500" : ""
+                          }`}
+                        >
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {states.map((state) => (
+                            <SelectItem
+                              key={state.isoCode}
+                              value={state.isoCode}
+                            >
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {errors.state && (
                         <motion.p
                           initial={{ opacity: 0, y: -10 }}
@@ -353,11 +402,27 @@ export default function AddressesSection() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="isDefault" {...register("isDefault")} />
-                    <Label htmlFor="isDefault" className="text-sm font-normal cursor-pointer">
-                      Set as default address
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">
+                      Phone Number <span className="text-red-500">*</span>
                     </Label>
+                    <Input
+                      id="phoneNumber"
+                      placeholder="+1234567890"
+                      {...register("phoneNumber")}
+                      className={`shadow-[inset_3px_3px_6px_rgba(0,0,0,0.05),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] dark:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.05)] ${
+                        errors.phoneNumber ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.phoneNumber && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500"
+                      >
+                        {errors.phoneNumber.message}
+                      </motion.p>
+                    )}
                   </div>
 
                   <div className="flex justify-end">
@@ -372,7 +437,9 @@ export default function AddressesSection() {
                           {editingAddressId ? "Updating..." : "Adding..."}
                         </>
                       ) : (
-                        <>{editingAddressId ? "Update Address" : "Add Address"}</>
+                        <>
+                          {editingAddressId ? "Update Address" : "Add Address"}
+                        </>
                       )}
                     </Button>
                   </div>
@@ -383,11 +450,18 @@ export default function AddressesSection() {
         </AnimatePresence>
 
         {/* Addresses List */}
-        {addresses.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="h-8 w-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Loading addresses...
+            </p>
+          </div>
+        ) : addresses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {addresses.map((address) => (
               <motion.div
-                key={address.id}
+                key={address._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`p-4 rounded-lg ${
@@ -396,6 +470,7 @@ export default function AddressesSection() {
                     : "bg-gray-50 dark:bg-gray-700/50"
                 } shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]`}
               >
+                {/* Address details */}
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center">
                     <div
@@ -407,7 +482,9 @@ export default function AddressesSection() {
                     >
                       <Home className="h-4 w-4" />
                     </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">{address.name}</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {address.name}
+                    </h3>
                   </div>
                   {address.isDefault && (
                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
@@ -422,34 +499,38 @@ export default function AddressesSection() {
                   <p>
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  <p>{address.country}</p>
+                  <p>
+                    {countries.find((c) => c.isoCode === address.country)
+                      ?.name || address.country}
+                  </p>
+                  <p>Phone: {address.phoneNumber}</p>
                 </div>
 
                 <div className="mt-4 ml-10 flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="outline" title="Edit"
                     size="sm"
                     onClick={() => handleEdit(address)}
                     className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                   >
-                    <Edit className="h-4 w-4 mr-1" /> Edit
+                    <Edit className="h-4 w-4 mr-1" /> 
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="outline" title="Delete"
                     size="sm"
-                    onClick={() => handleDelete(address.id)}
+                    onClick={() => handleDelete(address._id)}
                     className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                   >
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                    <Trash2 className="h-4 w-4 mr-1" /> 
                   </Button>
                   {!address.isDefault && (
                     <Button
-                      variant="outline"
+                      variant="outline" title="Set as default"
                       size="sm"
-                      onClick={() => handleSetDefault(address.id)}
+                      onClick={() => handleSetDefault(address._id)}
                       className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                     >
-                      <Check className="h-4 w-4 mr-1" /> Set as Default
+                      <Check className="h-4 w-4 mr-1" /> 
                     </Button>
                   )}
                 </div>
@@ -459,8 +540,12 @@ export default function AddressesSection() {
         ) : (
           <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg shadow-[inset_3px_3px_6px_rgba(0,0,0,0.05),inset_-3px_-3px_6px_rgba(255,255,255,0.5)] dark:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.05)]">
             <Home className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Addresses Yet</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Add your first address to make checkout faster.</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              No Addresses Yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Add your first address to make checkout faster.
+            </p>
             <Button
               onClick={() => setShowAddForm(true)}
               className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
@@ -471,5 +556,5 @@ export default function AddressesSection() {
         )}
       </div>
     </div>
-  )
+  );
 }

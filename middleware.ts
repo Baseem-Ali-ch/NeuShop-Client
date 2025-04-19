@@ -1,12 +1,27 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
-  ],
-};
+export function middleware(req: NextRequest) {
+  // const accessToken = req.cookies.get("userAccessToken");
+
+  // const { pathname } = req.nextUrl;
+
+  // const publicRoutes = ["/auth/login", "/auth/register", "/auth/two-factor/verify"];
+
+  // const protectedRoutes = ["/account"];
+
+  // if (accessToken && publicRoutes.includes(pathname)) {
+  //   const url = req.nextUrl.clone();
+  //   url.pathname = "/account";
+  //   return NextResponse.redirect(url);
+  // }
+
+  // if (!accessToken && protectedRoutes.some((route) => pathname.startsWith(route))) {
+  //   const url = req.nextUrl.clone();
+  //   url.pathname = "/auth/login";
+  //   return NextResponse.redirect(url);
+  // }
+
+  // return NextResponse.next();
+}

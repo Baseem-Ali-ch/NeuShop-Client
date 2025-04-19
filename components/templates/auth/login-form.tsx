@@ -10,6 +10,7 @@ import AuthLayout from "@/components/organisms/auth/auth-layout";
 import SocialLoginButtons from "@/components/molecules/auth/social-login-buttons";
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
+import { loginUser } from "@/lib/authApi";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -22,40 +23,23 @@ export default function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
+
+  // handle login submit functionality
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      const formData = {
-        email,
-        password,
-      };
+      const result = await loginUser(email, password);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-      const result = await response.json();
-      localStorage.setItem("access_token", result.accessToken);
-
-      if (!response.ok) {
+      if (!result.success) {
         setError(result.message || "An error occurred. Please try again.");
         return;
-      } else {
-        localStorage.setItem('is_loggedIn', 'true');
-        router.push("/account");
       }
+
+      localStorage.setItem("is_loggedIn", "true");
+      router.push("/account");
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {
