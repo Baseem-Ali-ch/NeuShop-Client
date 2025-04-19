@@ -135,17 +135,19 @@ export default function AccountDashboard() {
             </div>
           ) : (
             <>
-              {activeSection === "dashboard" && (
+              {activeSection === "dashboard" && user && (
                 <DashboardOverview user={user} />
               )}
               {activeSection === "orders" && <OrdersSection />}
               {activeSection === "profile" && user && (
                 <ProfileSettings user={user} />
               )}
-              {activeSection === "addresses" && (
+              {activeSection === "addresses" && user && (
                 <AddressesSection user={user} />
               )}
-              {activeSection === "payment" && <PaymentMethodsSection />}
+              {activeSection === "payment" && user && (
+                <PaymentMethodsSection user={user} />
+              )}
             </>
           )}
         </div>

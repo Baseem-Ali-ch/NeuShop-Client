@@ -80,8 +80,7 @@ export default function AddressesSection({ user }: AddressesSectionProps) {
     const loadAddresses = async () => {
       setIsLoading(true);
       try {
-        // await new Promise((resolve) => setTimeout(resolve, 1000));
-
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const data = await fetchAddresses();
         setAddresses(data);
       } catch (error) {
@@ -102,10 +101,10 @@ export default function AddressesSection({ user }: AddressesSectionProps) {
         isoCode: s.isoCode,
       }));
       setStates(stateList);
-  
+
       // Only reset the state field if not editing an address
       if (!editingAddressId) {
-        setValue("state", ""); 
+        setValue("state", "");
       }
     }
   }, [countryWatch, setValue, editingAddressId]);
@@ -130,7 +129,7 @@ export default function AddressesSection({ user }: AddressesSectionProps) {
   // Set an address as default
   const handleSetDefault = async (id: number) => {
     try {
-      console.log('id', id)
+      console.log("id", id);
       await setDefaultAddress(id);
       setAddresses(
         addresses.map((address) => ({
@@ -508,29 +507,32 @@ export default function AddressesSection({ user }: AddressesSectionProps) {
 
                 <div className="mt-4 ml-10 flex gap-2">
                   <Button
-                    variant="outline" title="Edit"
+                    variant="outline"
+                    title="Edit"
                     size="sm"
                     onClick={() => handleEdit(address)}
                     className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                   >
-                    <Edit className="h-4 w-4 mr-1" /> 
+                    <Edit className="h-4 w-4 mr-1" />
                   </Button>
                   <Button
-                    variant="outline" title="Delete"
+                    variant="outline"
+                    title="Delete"
                     size="sm"
                     onClick={() => handleDelete(address._id)}
                     className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                   >
-                    <Trash2 className="h-4 w-4 mr-1" /> 
+                    <Trash2 className="h-4 w-4 mr-1" />
                   </Button>
                   {!address.isDefault && (
                     <Button
-                      variant="outline" title="Set as default"
+                      variant="outline"
+                      title="Set as default"
                       size="sm"
                       onClick={() => handleSetDefault(address._id)}
                       className="shadow-[3px_3px_6px_rgba(0,0,0,0.05),-3px_-3px_6px_rgba(255,255,255,0.8)] dark:shadow-[3px_3px_6px_rgba(0,0,0,0.2),-3px_-3px_6px_rgba(255,255,255,0.05)]"
                     >
-                      <Check className="h-4 w-4 mr-1" /> 
+                      <Check className="h-4 w-4 mr-1" />
                     </Button>
                   )}
                 </div>
