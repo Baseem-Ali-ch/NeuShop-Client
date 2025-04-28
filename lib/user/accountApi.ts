@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { apiFetch } from "./api";
-import { addressSchema } from "./schemad/addressSchema";
 import { Address } from "@/types/address";
+import { addressSchema } from "../schemad/addressSchema";
 
 export const fetchUserDetails = async (): Promise<{
   success: boolean;
@@ -157,7 +157,7 @@ export const fetchPaymentMethods = async () => {
 
 export const deletePaymentMethod = async (id: number) => {
   try {
-     await apiFetch(
+    await apiFetch(
       `${process.env.NEXT_PUBLIC_BACKEND_API}/payment-methods/${id}`,
       {
         method: "DELETE",
@@ -171,7 +171,7 @@ export const deletePaymentMethod = async (id: number) => {
 
 export const setDefaultPaymentMethod = async (id: number, userId: string) => {
   try {
-     await apiFetch(
+    await apiFetch(
       `${process.env.NEXT_PUBLIC_BACKEND_API}/payment-methods/${id}`,
       {
         method: "PATCH",
@@ -179,7 +179,6 @@ export const setDefaultPaymentMethod = async (id: number, userId: string) => {
         body: JSON.stringify({ userId }),
       }
     );
-   
   } catch (error) {
     console.error("Error setting default payment method:", error);
     throw error;
@@ -205,6 +204,96 @@ export const savePaymentMethod = async (
     return response;
   } catch (error) {
     console.error("Error saving payment method:", error);
+    throw error;
+  }
+};
+
+export const getOrders = async () => {
+  try {
+    const response = await apiFetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/orders`,
+      {
+        method: "GET",
+      }
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    throw error;
+  }
+};
+
+export async function cancelOrder(orderId: string, reason: string) {
+  try {
+    const response = await apiFetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/orders/${orderId}/cancel`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    throw error;
+  }
+}
+
+export async function returnOrder(orderId: string, reason: string) {
+  try {
+    const response = await apiFetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/orders/${orderId}/return`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Error submitting return request:", error);
+    throw error;
+  }
+}
+
+export const fetchWalletDetails = async () => {
+  try {
+    const response = await apiFetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/wallet`,
+      {
+        method: "GET",
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching wallet:", error);
+    throw error;
+  }
+};
+
+export const useWalletBalance = async (orderId: string, amount: number) => {
+  try {
+    const response = await apiFetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/wallet/use`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId, amount }),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error using wallet balance:", error);
     throw error;
   }
 };

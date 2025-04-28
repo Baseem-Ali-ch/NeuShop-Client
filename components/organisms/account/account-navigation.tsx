@@ -8,10 +8,11 @@ import {
   CreditCard,
   LogOut,
   X,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AccountSection } from "@/components/templates/account-dashboard";
-import { logoutUser } from "@/lib/authApi";
+import { logoutUser } from "@/lib/user/authApi";
 
 interface AccountNavigationProps {
   activeSection: AccountSection;
@@ -51,6 +52,11 @@ export default function AccountNavigation({
       id: "payment",
       label: "Payment Methods",
       icon: CreditCard,
+    },
+    {
+      id: "wallet",
+      label: "Wallet",
+      icon: Wallet,
     },
   ];
 

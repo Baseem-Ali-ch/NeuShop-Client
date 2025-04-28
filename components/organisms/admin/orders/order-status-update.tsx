@@ -3,48 +3,44 @@
 import { useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { updateOrderStatus } from "@/lib/admin/orderApi"
 
 interface OrderStatusUpdateProps {
-  order: any
+  order: {
+    id: string;
+    status: string;
+  };
+  onStatusUpdate?: () => void;
 }
 
-export default function OrderStatusUpdate({ order }: OrderStatusUpdateProps) {
+const ORDER_STATUSES = [
+  { value: "pending", label: "Pending" },
+  { value: "processing", label: "Processing" },
+  { value: "shipped", label: "Shipped" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+] as const;
+
+export default function OrderStatusUpdate({ order, onStatusUpdate }: OrderStatusUpdateProps) {
   const [status, setStatus] = useState(order.status)
-  const [notifyCustomer, setNotifyCustomer] = useState(true)
-  const [message, setMessage] = useState("")
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const handleStatusChange = (value: string) => {
     setStatus(value)
-
-    // Set default message based on status
-    switch (value) {
-      case "processing":
-        setMessage("Your order is now being processed. We'll update you when it ships.")
-        break
-      case "shipped":
-        setMessage(
-          "Good news! Your order has been shipped. You can track your package with the tracking number provided.",
-        )
-        break
-      case "delivered":
-        setMessage("Your order has been delivered. Thank you for shopping with us!")
-        break
-      case "cancelled":
-        setMessage("Your order has been cancelled as requested. Please contact us if you have any questions.")
-        break
-      default:
-        setMessage("")
-    }
   }
 
-  const handleUpdateStatus = () => {
-    // In a real app, you would update the order status in the database
-    console.log(`Updating order ${order.id} status to ${status}`)
-    if (notifyCustomer) {
-      console.log(`Sending notification to customer: ${message}`)
+  const handleUpdateStatus = async () => {
+    try {
+      setIsUpdating(true)
+      await updateOrderStatus(order.id, status)
+      toast.success("Order status updated successfully")
+      onStatusUpdate?.()
+    } catch (error) {
+      toast.error("Failed to update order status")
+      console.error("Error updating status:", error)
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -59,35 +55,26 @@ export default function OrderStatusUpdate({ order }: OrderStatusUpdateProps) {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="shipped">Shipped</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-              <SelectItem value="refunded">Refunded</SelectItem>
+              {ORDER_STATUSES.map((statusOption) => (
+                <SelectItem 
+                  key={statusOption.value} 
+                  value={statusOption.value}
+                >
+                  {statusOption.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="md:col-span-3 space-y-4">
-          <div className="flex items-center space-x-2">
-            <Switch id="notify-customer" checked={notifyCustomer} onCheckedChange={setNotifyCustomer} />
-            <Label htmlFor="notify-customer">Notify customer</Label>
-          </div>
-
-          {notifyCustomer && (
-            <Textarea
-              placeholder="Message to customer..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-            />
-          )}
         </div>
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleUpdateStatus}>Update Status</Button>
+        <Button 
+          onClick={handleUpdateStatus} 
+          disabled={isUpdating || status === order.status}
+        >
+          {isUpdating ? "Updating..." : "Update Status"}
+        </Button>
       </div>
     </div>
   )

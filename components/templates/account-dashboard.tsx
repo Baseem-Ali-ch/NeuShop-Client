@@ -11,14 +11,16 @@ import ProfileSettings from "@/components/organisms/account/profile-settings";
 import AddressesSection from "@/components/organisms/account/addresses-section";
 import PaymentMethodsSection from "@/components/organisms/account/payment-methods-section";
 import { useSearchParams } from "next/navigation";
-import { fetchUserDetails } from "@/lib/accountApi";
+import { fetchUserDetails } from "@/lib/user/accountApi";
+import WalletSection from "../organisms/account/wallet-section";
 
 export type AccountSection =
   | "dashboard"
   | "orders"
   | "profile"
   | "addresses"
-  | "payment";
+  | "payment"
+  | "wallet";
 
 export default function AccountDashboard() {
   const [activeSection, setActiveSection] =
@@ -40,7 +42,7 @@ export default function AccountDashboard() {
     const section = searchParams.get("section");
     if (
       section &&
-      ["dashboard", "orders", "profile", "addresses", "payment"].includes(
+      ["dashboard", "orders", "profile", "addresses", "payment", 'wallet'].includes(
         section
       )
     ) {
@@ -138,7 +140,7 @@ export default function AccountDashboard() {
               {activeSection === "dashboard" && user && (
                 <DashboardOverview user={user} />
               )}
-              {activeSection === "orders" && <OrdersSection />}
+              {activeSection === "orders" && user && <OrdersSection />}
               {activeSection === "profile" && user && (
                 <ProfileSettings user={user} />
               )}
@@ -147,6 +149,9 @@ export default function AccountDashboard() {
               )}
               {activeSection === "payment" && user && (
                 <PaymentMethodsSection user={user} />
+              )}
+              {activeSection === "wallet" && user && (
+                <WalletSection />
               )}
             </>
           )}

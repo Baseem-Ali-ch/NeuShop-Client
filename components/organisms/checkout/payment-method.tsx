@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CreditCard, Lock, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CreditCard,
+  Lock,
+  Plus,
+  ShoppingBag,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -14,7 +21,10 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { placeOrder } from "@/lib/user/checkoutApi";
 
+// Schema for payment form validation
 const paymentSchema = z.object({
   cardNumber: z
     .string()
@@ -23,27 +33,37 @@ const paymentSchema = z.object({
         "Card number must be 16 digits in the format XXXX XXXX XXXX XXXX",
     })
     .transform((value) => value.replace(/\s+/g, "")), // Remove spaces for further processing
-  cardName: z.string().min(1, { message: "Cardholder name is required" }),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, {
-    message: "Expiry date must be in MM/YY format",
+  cardholderName: z.string().min(1, { message: "Cardholder name is required" }),
+  expiryMonth: z.string().regex(/^(0[1-9]|1[0-2])$/, {
+    message: "Expiry month must be between 01 and 12",
   }),
+  expiryYear: z
+    .string()
+    .regex(/^\d{2}$/, { message: "Expiry year must be in YY format" }),
   cvv: z.string().regex(/^\d{3,4}$/, { message: "CVV must be 3 or 4 digits" }),
   sameAsShipping: z.boolean().optional(),
   paymentMethod: z.enum(["creditCard", "paypal", "applePay"]),
 });
 
-type PaymentFormValues = z.infer<typeof paymentSchema>;
+type PaymentFormValues = z.infer<typeof paymentSchema> & {
+  _id?: string;
+};
+
+interface PaymentMethod {
+  _id: string;
+  cardNumber: string;
+  cardholderName: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+  isDefault: boolean;
+  cardType?: string;
+}
 
 interface PaymentMethodProps {
-  paymentInfo: {
-    cardNumber: string;
-    cardName: string;
-    expiryDate: string;
-    cvv: string;
-    sameAsShipping: boolean;
-    paymentMethod: string;
-  };
+  paymentInfo: any;
   setPaymentInfo: (info: any) => void;
+  paymentMethods: PaymentMethod[];
   shippingInfo: {
     address: string;
     apartment: string;
@@ -53,39 +73,91 @@ interface PaymentMethodProps {
     zipCode: string;
   };
   onBack: () => void;
+  subtotal: number;
 }
 
 export default function PaymentMethod({
   paymentInfo,
   setPaymentInfo,
+  paymentMethods,
   shippingInfo,
+  subtotal,
   onBack,
 }: PaymentMethodProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [cardType, setCardType] = useState<string>("");
+  const [showNewCardForm, setShowNewCardForm] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(
+    null
+  );
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const subtotal = useSelector((state: RootState) => state.cart.subtotal);
+  // const subtotal = useSelector((state: RootState) => state.cart.subtotal);
   const total = useSelector((state: RootState) => state.cart.total);
+
+  // Set default payment method on component mount
+  useEffect(() => {
+    const defaultPayment = paymentMethods.find((payment) => payment.isDefault);
+    if (defaultPayment) {
+      setSelectedPaymentId(defaultPayment._id);
+    } else if (paymentMethods.length > 0) {
+      setSelectedPaymentId(paymentMethods[0]._id);
+    }
+  }, [paymentMethods]);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       ...paymentInfo,
-      paymentMethod: paymentInfo.paymentMethod as
-        | "creditCard"
-        | "paypal"
-        | "applePay",
+      paymentMethod: "creditCard",
     },
   });
 
   const watchSameAsShipping = watch("sameAsShipping");
   const watchPaymentMethod = watch("paymentMethod");
+
+  // Helper function to check if card is expired
+  const isCardExpired = (month: string, year: string) => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100;
+    const currentMonth = currentDate.getMonth() + 1;
+
+    const expiryYear = parseInt(year);
+    const expiryMonth = parseInt(month);
+
+    return (
+      expiryYear < currentYear ||
+      (expiryYear === currentYear && expiryMonth < currentMonth)
+    );
+  };
+
+  // Helper function to format card number for display
+  const formatCardNumberForDisplay = (cardNumber: string) => {
+    if (!cardNumber) return "";
+    // Keep only the last 4 digits visible
+    return `•••• •••• •••• ${cardNumber.slice(-4)}`;
+  };
+
+  // Helper function to get card icon based on card type
+  const getCardIcon = (cardType: string) => {
+    const cardIcons = {
+      visa: "/visa-card.png",
+      mastercard: "/mastercard.png",
+      amex: "/amex-card.png",
+      discover: "/discover-card.png",
+    };
+    return (
+      cardIcons[cardType as keyof typeof cardIcons] ||
+      "/credit-card-generic.png"
+    );
+  };
 
   const orderDetails = () => {
     // Redirect to order details page
@@ -94,40 +166,43 @@ export default function PaymentMethod({
 
   const onSubmit = async (data: PaymentFormValues) => {
     setIsProcessing(true);
-
+  
     try {
+      // If using saved payment method
+      let paymentData = data;
+      if (selectedPaymentId && !showNewCardForm) {
+        const selectedPayment = paymentMethods.find(
+          (p) => p._id === selectedPaymentId
+        );
+        if (selectedPayment) {
+          paymentData = {
+            ...data,
+            cardNumber: selectedPayment.cardNumber,
+            cardholderName: selectedPayment.cardholderName,
+            expiryMonth: selectedPayment.expiryMonth,
+            expiryYear: selectedPayment.expiryYear,
+            _id: selectedPayment._id,
+          };
+        }
+      }
+  
       // Combine payment info, shipping info, and other order details
       const orderData = {
-        paymentInfo: data,
+        paymentInfo: paymentData,
         shippingInfo,
         items: cartItems,
         subtotal: subtotal,
         total: total,
         tax: subtotal * 0.08,
       };
-
-      // Send the order data to the backend
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/place-order`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to save order");
-      }
-
-      const result = await response.json();
+      console.log('order data', orderData)
+  
+      // Call the API to place the order
+      const result = await placeOrder(orderData);
       console.log("Order saved successfully:", result);
-
+  
       // Mark the order as complete
-      setPaymentInfo(data);
+      setPaymentInfo(paymentData);
       setIsOrderComplete(true);
     } catch (error) {
       console.error("Error saving order:", error);
@@ -165,15 +240,25 @@ export default function PaymentMethod({
     }
   };
 
-  // Format expiry date as user types
-  const formatExpiryDate = (value: string) => {
-    const digits = value.replace(/\D/g, "");
+  // Handle selecting a saved payment method
+  const handleSelectPayment = (paymentId: string) => {
+    setSelectedPaymentId(paymentId);
+    setShowNewCardForm(false);
+  };
 
-    if (digits.length <= 2) {
-      return digits;
-    } else {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
-    }
+  // Handle adding a new card
+  const handleAddNewCard = () => {
+    setShowNewCardForm(true);
+    setSelectedPaymentId(null);
+    reset({
+      cardNumber: "",
+      cardholderName: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cvv: "",
+      sameAsShipping: true,
+      paymentMethod: "creditCard",
+    });
   };
 
   if (isOrderComplete) {
@@ -260,162 +345,283 @@ export default function PaymentMethod({
           </TabsList>
 
           <TabsContent value="creditCard" className="space-y-6">
-            <div className="flex justify-between items-center mb-2">
-              <Label htmlFor="cardNumber">Card Information</Label>
-              <div className="flex space-x-2">
-                <Image
-                  src="/stylized-payment-network.png"
-                  alt="Visa"
-                  width={36}
-                  height={24}
-                  className="object-contain"
-                />
-                <Image
-                  src="/interlocking-circles.png"
-                  alt="Mastercard"
-                  width={36}
-                  height={24}
-                  className="object-contain"
-                />
-                <Image
-                  src="/amex-card-close-up.png"
-                  alt="American Express"
-                  width={36}
-                  height={24}
-                  className="object-contain"
-                />
-                <Image
-                  src="/abstract-geometric-logo.png"
-                  alt="Discover"
-                  width={36}
-                  height={24}
-                  className="object-contain"
-                />
-              </div>
-            </div>
+            {/* Saved Payment Methods */}
+            {paymentMethods.length > 0 && (
+              <div className="mb-6 ">
+                <div className="mb-4 flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    Saved Payment Methods
+                  </h3>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Input
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    className={`pl-10 ${
-                      errors.cardNumber
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }`}
-                    {...register("cardNumber", {
-                      onChange: (e) => {
-                        const formatted = formatCardNumber(e.target.value);
-                        e.target.value = formatted;
-                      },
-                    })}
-                  />
-                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  {cardType && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Image
-                        src={`/placeholder.svg?height=20&width=32&query=${cardType}+logo`}
-                        alt={cardType}
-                        width={32}
-                        height={20}
-                        className="object-contain"
-                      />
-                    </div>
-                  )}
-                </div>
-                {errors.cardNumber && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-red-500 mt-1"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddNewCard}
+                    className="flex items-center"
                   >
-                    {errors.cardNumber.message}
-                  </motion.p>
-                )}
-              </div>
+                    <Plus className="h-4 w-4 mr-1" />
+                    New Card
+                  </Button>
+                </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Add New Card Button
+        <div
+          className={`p-4 rounded-lg cursor-pointer flex items-center justify-center border-2 ${
+            showNewCardForm
+              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-600"
+              : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+          } shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors`}
+          onClick={handleAddNewCard}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
+              <Plus className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+            </div>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              Add New Card
+            </p>
+          </div>
+        </div> */}
+
+                <RadioGroup
+                  value={selectedPaymentId || ""}
+                  onValueChange={(value) => handleSelectPayment(value)}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
+                  {paymentMethods.map((payment) => {
+                    const isExpired = isCardExpired(
+                      payment.expiryMonth,
+                      payment.expiryYear
+                    );
+
+                    return (
+                      <div
+                        key={payment._id}
+                        className={`relative p-4 rounded-lg border-2 ${
+                          selectedPaymentId === payment._id
+                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-600"
+                            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                        } shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors`}
+                      >
+                        <RadioGroupItem
+                          id={`payment-${payment._id}`}
+                          value={payment._id}
+                          className="peer sr-only"
+                        />
+                        <Label
+                          htmlFor={`payment-${payment._id}`}
+                          className="cursor-pointer w-full h-full block"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center">
+                              <div className="w-10 h-6 mr-2 relative">
+                                <Image
+                                  src={getCardIcon(payment.cardType || "")}
+                                  alt={payment.cardType || "Credit Card"}
+                                  fill
+                                  className="object-contain"
+                                />
+                              </div>
+                              <h3 className="font-medium text-gray-900 dark:text-white">
+                                {formatCardNumberForDisplay(payment.cardNumber)}
+                              </h3>
+                            </div>
+                            <div className="flex items-center">
+                              {payment.isDefault && (
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full mr-2">
+                                  Default
+                                </span>
+                              )}
+                              {isExpired && (
+                                <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full">
+                                  Expired
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="ml-10 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            <p>{payment.cardholderName}</p>
+                            <p>
+                              Expires: {payment.expiryMonth}/
+                              {payment.expiryYear}
+                            </p>
+                          </div>
+                        </Label>
+                        {selectedPaymentId === payment._id && (
+                          <span className="absolute top-2 right-2 w-6 h-6 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
+                            <Check className="h-4 w-4 text-white" />
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* New Card Form */}
+            {showNewCardForm && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
                 <div className="space-y-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
-                    id="expiryDate"
-                    placeholder="MM/YY"
-                    className={
-                      errors.expiryDate
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }
-                    {...register("expiryDate", {
-                      onChange: (e) => {
-                        e.target.value = formatExpiryDate(e.target.value);
-                      },
-                    })}
-                  />
-                  {errors.expiryDate && (
+                  <Label htmlFor="cardNumber">Card Number</Label>
+                  <div className="relative">
+                    <Input
+                      id="cardNumber"
+                      placeholder="1234 5678 9012 3456"
+                      className={`pl-10 ${
+                        errors.cardNumber
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }`}
+                      {...register("cardNumber", {
+                        onChange: (e) => {
+                          const formatted = formatCardNumber(e.target.value);
+                          e.target.value = formatted;
+                        },
+                      })}
+                    />
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    {cardType && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Image
+                          src={`/credit-card-${cardType}.png`}
+                          alt={cardType}
+                          width={32}
+                          height={20}
+                          className="object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {errors.cardNumber && (
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-sm text-red-500 mt-1"
                     >
-                      {errors.expiryDate.message}
+                      {errors.cardNumber.message}
                     </motion.p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    placeholder="123"
-                    className={
-                      errors.cvv
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }
-                    {...register("cvv")}
-                  />
-                  {errors.cvv && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm text-red-500 mt-1"
-                    >
-                      {errors.cvv.message}
-                    </motion.p>
-                  )}
-                </div>
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expiryMonth">Expiry Month</Label>
+                    <Input
+                      id="expiryMonth"
+                      placeholder="MM"
+                      className={
+                        errors.expiryMonth
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
+                      {...register("expiryMonth")}
+                    />
+                    {errors.expiryMonth && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500 mt-1"
+                      >
+                        {errors.expiryMonth.message}
+                      </motion.p>
+                    )}
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cardName">Cardholder Name</Label>
-                <Input
-                  id="cardName"
-                  placeholder="John Doe"
-                  className={
-                    errors.cardName
-                      ? "border-red-500 focus-visible:ring-red-500"
-                      : ""
-                  }
-                  {...register("cardName")}
-                />
-                {errors.cardName && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-red-500 mt-1"
+                  <div className="space-y-2">
+                    <Label htmlFor="expiryYear">Expiry Year</Label>
+                    <Input
+                      id="expiryYear"
+                      placeholder="YY"
+                      className={
+                        errors.expiryYear
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
+                      {...register("expiryYear")}
+                    />
+                    {errors.expiryYear && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500 mt-1"
+                      >
+                        {errors.expiryYear.message}
+                      </motion.p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cardholderName">Cardholder Name</Label>
+                    <Input
+                      id="cardholderName"
+                      placeholder="John Doe"
+                      className={
+                        errors.cardholderName
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
+                      {...register("cardholderName")}
+                    />
+                    {errors.cardholderName && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500 mt-1"
+                      >
+                        {errors.cardholderName.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cvv">CVV</Label>
+                    <Input
+                      id="cvv"
+                      placeholder="123"
+                      className={
+                        errors.cvv
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
+                      {...register("cvv")}
+                    />
+                    {errors.cvv && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500 mt-1"
+                      >
+                        {errors.cvv.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewCardForm(false)}
+                    className="sm:flex-1"
                   >
-                    {errors.cardName.message}
-                  </motion.p>
-                )}
-              </div>
-            </div>
+                    Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            )}
           </TabsContent>
 
           <TabsContent value="paypal" className="text-center py-8">
             <Image
-              src="/paypal-logo-closeup.png"
+              src="/paypal-logo.png"
               alt="PayPal"
               width={200}
               height={60}
@@ -432,7 +638,7 @@ export default function PaymentMethod({
 
           <TabsContent value="applePay" className="text-center py-8">
             <Image
-              src="/contactless-payment-symbols.png"
+              src="/apple-pay-logo.png"
               alt="Apple Pay"
               width={200}
               height={60}
@@ -444,7 +650,7 @@ export default function PaymentMethod({
             </p>
             <Button type="button" className="w-full bg-black hover:bg-gray-900">
               <Image
-                src="/white-apple-logo.png"
+                src="/apple-logo.png"
                 alt="Apple"
                 width={24}
                 height={24}
@@ -454,38 +660,6 @@ export default function PaymentMethod({
             </Button>
           </TabsContent>
         </Tabs>
-
-        {watchPaymentMethod === "creditCard" && (
-          <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex items-center space-x-2 mb-6">
-              <Checkbox
-                id="sameAsShipping"
-                checked={watchSameAsShipping}
-                onCheckedChange={(checked) =>
-                  setValue("sameAsShipping", checked as boolean)
-                }
-              />
-              <Label
-                htmlFor="sameAsShipping"
-                className="text-sm font-normal cursor-pointer"
-              >
-                Billing address is the same as shipping address
-              </Label>
-            </div>
-
-            {!watchSameAsShipping && (
-              <div className="space-y-4 mb-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Billing Address
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Please enter your billing address.
-                </p>
-                {/* Billing address form fields would go here */}
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="flex flex-col sm:flex-row gap-4 pt-6">
           <Button

@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowUpDown,
+  BanIcon,
+  Ban,
 } from "lucide-react";
 import {
   Table,
@@ -38,19 +40,13 @@ import {
   selectAllCustomers,
   deselectAllCustomers,
 } from "@/store/slices/customerSlice";
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  dateRegistered: string;
-  ordersCount: number;
-  totalSpent: string;
-  lastOrderDate: string | null;
-  status: "active" | "inactive";
-  avatar?: string;
-}
+import { Customer } from "@/types/customer";
+import {
+  activateCustomer,
+  deactivateCustomer,
+  deleteCustomer,
+  fetchCustomers,
+} from "@/lib/admin/customerApi";
 
 interface CustomerTableProps {
   onViewDetails: (customerId: string) => void;
@@ -74,73 +70,14 @@ export default function CustomerTable({
 
   // Fetch customers from API
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const loadCustomers = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/customers`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem(
-                "admin_access_token"
-              )}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch customers: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const data = await fetchCustomers();
         console.log("data", data);
-        if (!data.customers || !Array.isArray(data.customers)) {
-          throw new Error(
-            "Invalid response format: Expected data.customers to be an array"
-          );
-        }
-
-        const mappedCustomers: Customer[] = data.customers.map(
-          (customer: any) => {
-            const latestOrder =
-              customer.orders?.length > 0
-                ? new Date(
-                    Math.max(
-                      ...customer.orders.map((o: any) =>
-                        new Date(o.date).getTime()
-                      )
-                    )
-                  )
-                : null;
-
-            return {
-              id: customer._id.toString(),
-              name:
-                `${customer.firstName || ""} ${
-                  customer.lastName || ""
-                }`.trim() || "Unknown",
-              email: customer.email || "N/A",
-              phone: customer.phone || "N/A",
-              dateRegistered: customer.createdAt
-                ? new Date(customer.createdAt).toLocaleDateString()
-                : "N/A",
-              ordersCount: customer.orders?.length || 0,
-              totalSpent: customer.totalSpent
-                ? `$${customer.totalSpent.toFixed(2)}`
-                : "$0.00",
-              lastOrderDate: latestOrder
-                ? latestOrder.toLocaleDateString()
-                : null,
-              status: customer.status || "active",
-              avatar: customer.avatar || "/placeholder.svg",
-            };
-          }
-        );
-
-        setCustomers(mappedCustomers);
+        setCustomers(data);
       } catch (err: any) {
         setError(
           err.message || "Unable to load customers. Please try again later."
@@ -150,8 +87,52 @@ export default function CustomerTable({
       }
     };
 
-    fetchCustomers();
+    loadCustomers();
   }, []);
+
+  const handleActivate = async (customerId: string) => {
+    try {
+      await activateCustomer(customerId);
+      setCustomers((prevCustomers) =>
+        prevCustomers.map((customer) =>
+          customer.id === customerId
+            ? { ...customer, status: "active" } // Change from isActive to status
+            : customer
+        )
+      );
+    } catch (err) {
+      console.error("Failed to activate customer:", err);
+      // Add user feedback here
+    }
+  };
+
+  const handleDeactivate = async (customerId: string) => {
+    try {
+      await deactivateCustomer(customerId);
+      setCustomers((prevCustomers) =>
+        prevCustomers.map((customer) =>
+          customer.id === customerId
+            ? { ...customer, status: "inactive" } // Change from isActive to status
+            : customer
+        )
+      );
+    } catch (err) {
+      console.error("Failed to deactivate customer:", err);
+      // Add user feedback here
+    }
+  };
+
+  // Handle delete customer
+  const handleDelete = async (customerId: string) => {
+    try {
+      await deleteCustomer(customerId);
+      setCustomers((prevCustomers) =>
+        prevCustomers.filter((customer) => customer.id !== customerId)
+      );
+    } catch (err) {
+      console.error("Failed to delete customer:", err);
+    }
+  };
 
   // Filter and sort customers
   const filteredCustomers = customers.filter(
@@ -197,55 +178,6 @@ export default function CustomerTable({
     indexOfLastCustomer
   );
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const allIds = currentCustomers.map((customer) => customer.id);
-      setSelectedCustomers(allIds);
-      dispatch(selectAllCustomers(allIds));
-    } else {
-      setSelectedCustomers([]);
-      dispatch(deselectAllCustomers());
-    }
-  };
-
-  const handleSelectCustomer = (customerId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCustomers([...selectedCustomers, customerId]);
-      dispatch(selectCustomer(customerId));
-    } else {
-      setSelectedCustomers(selectedCustomers.filter((id) => id !== customerId));
-      dispatch(deselectCustomer(customerId));
-    }
-  };
-
-  const handleDelete = (customerId: string) => {
-    // Placeholder for delete action
-    console.log("Delete customer:", customerId);
-  };
-
-  const handleLoginAs = (customerId: string) => {
-    // Placeholder for login as action
-    console.log("Login as customer:", customerId);
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    return sortOrder === "asc" ? (
-      <ChevronUp className="ml-2 h-4 w-4" />
-    ) : (
-      <ChevronDown className="ml-2 h-4 w-4" />
-    );
-  };
-
   if (isLoading) {
     return (
       <Card className="bg-white dark:bg-gray-800 p-6 text-center">
@@ -278,43 +210,11 @@ export default function CustomerTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={
-                    selectedCustomers.length === currentCustomers.length &&
-                    currentCustomers.length > 0
-                  }
-                  onCheckedChange={handleSelectAll}
-                  aria-label="Select all customers"
-                />
-              </TableHead>
               <TableHead className="w-12"></TableHead>
-              <TableHead>
-                <button
-                  className="flex items-center font-medium text-left"
-                  onClick={() => handleSort("name")}
-                >
-                  Name {getSortIcon("name")}
-                </button>
-              </TableHead>
-              <TableHead>
-                <button
-                  className="flex items-center font-medium text-left"
-                  onClick={() => handleSort("email")}
-                >
-                  Email {getSortIcon("email")}
-                </button>
-              </TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>
-                <button
-                  className="flex items-center font-medium text-left"
-                  onClick={() => handleSort("dateRegistered")}
-                >
-                  Date Registered {getSortIcon("dateRegistered")}
-                </button>
-              </TableHead>
-
+              <TableHead>Date Registered</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -322,15 +222,6 @@ export default function CustomerTable({
           <TableBody>
             {currentCustomers.map((customer) => (
               <TableRow key={customer.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedCustomers.includes(customer.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectCustomer(customer.id, !!checked)
-                    }
-                    aria-label={`Select ${customer.name}`}
-                  />
-                </TableCell>
                 <TableCell>
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={customer.avatar} alt={customer.name} />
@@ -348,15 +239,12 @@ export default function CustomerTable({
                 <TableCell>{customer.dateRegistered}</TableCell>
 
                 <TableCell>
-                  {customer.status === "active" ? (
+                  {customer.status === "active" ? ( // Change from isActive to status
                     <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 hover:bg-green-100">
                       Active
                     </Badge>
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-gray-500 dark:text-gray-400"
-                    >
+                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 hover:bg-red-100">
                       Inactive
                     </Badge>
                   )}
@@ -376,18 +264,23 @@ export default function CustomerTable({
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onEditCustomer(customer.id)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleLoginAs(customer.id)}
-                      >
-                        <UserCog className="mr-2 h-4 w-4" />
-                        Login as
-                      </DropdownMenuItem>
+                      {customer.status === "active" ? (
+                        <DropdownMenuItem
+                          className="text-yellow-600 dark:text-orange-400"
+                          onClick={() => handleDeactivate(customer.id)}
+                        >
+                          <Ban className="mr-2 h-4 w-4" />
+                          Deactivate
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          className="text-green-600 dark:text-green-400"
+                          onClick={() => handleActivate(customer.id)}
+                        >
+                          <UserCog className="mr-2 h-4 w-4" />
+                          Activate
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="text-red-600 dark:text-red-400"
                         onClick={() => handleDelete(customer.id)}

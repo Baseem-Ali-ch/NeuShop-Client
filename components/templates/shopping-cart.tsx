@@ -11,11 +11,12 @@ import SuggestedProducts from "@/components/organisms/suggested-products"
 import type { RootState } from "@/store/store"
 import { clearCart } from "@/store/slices/cartSlice"
 import { products } from "@/data/products"
+import { fetchCart } from "@/lib/user/checkoutApi"
 
 export default function ShoppingCart() {
   const cartItems = useSelector((state: RootState) => state.cart.items)
-  const totalAmount = useSelector((state: RootState) => state.cart.total)
-  const dispatch = useDispatch()
+  const totalAmount = useSelector((state: RootState) => state.cart.total);
+    const dispatch = useDispatch()
   const [isClient, setIsClient] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
 
@@ -30,6 +31,20 @@ export default function ShoppingCart() {
       setIsClearing(false)
     }, 600)
   }
+
+  // Fetch cart on mount
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        const result = await fetchCart(dispatch);
+        console.log("Cart fetched successfully:", result);
+      } catch (error) {
+        console.error("Error fetching cart:", error);
+      }
+    };
+  
+    fetchCartData();
+  }, [dispatch]);
 
   // Fix hydration issues
   useEffect(() => {

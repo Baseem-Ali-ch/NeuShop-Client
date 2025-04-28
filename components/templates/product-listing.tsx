@@ -1,67 +1,72 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useMediaQuery } from "@/hooks/use-mobile"
-import { FilterIcon, GridIcon, ListIcon, X } from "lucide-react"
-import FilterSidebar from "@/components/organisms/filter-sidebar"
-import ProductGrid from "@/components/organisms/product-grid"
-import ProductList from "@/components/organisms/product-list"
-import SortDropdown from "@/components/molecules/sort-dropdown"
-import Pagination from "@/components/molecules/pagination"
-import { Button } from "@/components/ui/button"
-import { products } from "@/data/products"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { useMediaQuery } from "@/hooks/use-mobile";
+import { FilterIcon, GridIcon, ListIcon, X } from "lucide-react";
+import FilterSidebar from "@/components/organisms/filter-sidebar";
+import ProductGrid from "@/components/organisms/product-grid";
+import ProductList from "@/components/organisms/product-list";
+import SortDropdown from "@/components/molecules/sort-dropdown";
+import Pagination from "@/components/molecules/pagination";
+import { Button } from "@/components/ui/button";
+import { products } from "@/data/products";
+import { cn } from "@/lib/user/utils";
 
-export type ViewMode = "grid" | "list"
-export type SortOption = "newest" | "price-low" | "price-high" | "popular"
+export type ViewMode = "grid" | "list";
+export type SortOption = "newest" | "price-low" | "price-high" | "popular";
 
 export default function ProductListing() {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid")
-  const [sortOption, setSortOption] = useState<SortOption>("newest")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [filteredProducts, setFilteredProducts] = useState(products)
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [filteredProducts, setFilteredProducts] = useState(products);
 
-  const isMobile = useMediaQuery("(max-width: 1024px)")
-  const productsPerPage = 12
+  const isMobile = useMediaQuery("(max-width: 1024px)");
+  const productsPerPage = 12;
 
   // Simulate loading state
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
+      setIsLoading(false);
+    }, 1500);
 
-    return () => clearTimeout(timer)
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle sorting
   useEffect(() => {
-    let sorted = [...products]
+    let sorted = [...products];
 
     switch (sortOption) {
       case "newest":
-        sorted = sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        break
+        sorted = sorted.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        break;
       case "price-low":
-        sorted = sorted.sort((a, b) => a.price - b.price)
-        break
+        sorted = sorted.sort((a, b) => a.price - b.price);
+        break;
       case "price-high":
-        sorted = sorted.sort((a, b) => b.price - a.price)
-        break
+        sorted = sorted.sort((a, b) => b.price - a.price);
+        break;
       case "popular":
-        sorted = sorted.sort((a, b) => b.rating - a.rating)
-        break
+        sorted = sorted.sort((a, b) => b.rating - a.rating);
+        break;
     }
 
-    setFilteredProducts(sorted)
-  }, [sortOption])
+    setFilteredProducts(sorted);
+  }, [sortOption]);
 
   // Calculate pagination
-  const indexOfLastProduct = currentPage * productsPerPage
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct)
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 lg:py-20">
@@ -70,7 +75,9 @@ export default function ProductListing() {
           <h1 className="text-3xl md:text-4xl font-light tracking-tight text-gray-900 dark:text-gray-100">
             Collection
           </h1>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">Discover our curated selection of premium products</p>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            Discover our curated selection of premium products
+          </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -84,12 +91,17 @@ export default function ProductListing() {
             <div
               className={cn(
                 "fixed inset-0 z-50 bg-white dark:bg-gray-950 transform transition-transform duration-300 ease-in-out",
-                isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full"
               )}
             >
               <div className="flex justify-between items-center p-4 border-b">
                 <h2 className="text-xl font-medium">Filters</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} aria-label="Close filters">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSidebarOpen(false)}
+                  aria-label="Close filters"
+                >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -104,7 +116,11 @@ export default function ProductListing() {
             {/* Toolbar */}
             <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
               {isMobile && (
-                <Button variant="outline" className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
+                <Button
+                  variant="outline"
+                  className="lg:hidden"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
                   <FilterIcon className="h-4 w-4 mr-2" />
                   Filters
                 </Button>
@@ -117,7 +133,10 @@ export default function ProductListing() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn("rounded-none border-r", viewMode === "grid" && "bg-gray-100 dark:bg-gray-800")}
+                    className={cn(
+                      "rounded-none border-r",
+                      viewMode === "grid" && "bg-gray-100 dark:bg-gray-800"
+                    )}
                     onClick={() => setViewMode("grid")}
                     aria-label="Grid view"
                   >
@@ -126,7 +145,9 @@ export default function ProductListing() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn(viewMode === "list" && "bg-gray-100 dark:bg-gray-800")}
+                    className={cn(
+                      viewMode === "list" && "bg-gray-100 dark:bg-gray-800"
+                    )}
                     onClick={() => setViewMode("list")}
                     aria-label="List view"
                   >
@@ -146,12 +167,16 @@ export default function ProductListing() {
             {/* Pagination */}
             {!isLoading && totalPages > 1 && (
               <div className="mt-12">
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

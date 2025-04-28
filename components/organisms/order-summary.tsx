@@ -31,12 +31,9 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
     }
   };
 
-  // Calculate tax (example: 8%)
-  const tax = subtotal * 0.08;
 
   // Calculate total
-  const total = subtotal + getShippingCost() + tax - discount;
-
+  const total = subtotal + getShippingCost() - discount;
   // Handle coupon application
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) {
@@ -162,14 +159,6 @@ export default function OrderSummary({ subtotal }: OrderSummaryProps) {
             </span>
           </label>
         </div>
-      </div>
-
-      {/* Tax */}
-      <div className="flex justify-between py-3 border-b-2 border-dashed border-gray-300 dark:border-gray-700">
-        <span className="text-gray-600 dark:text-gray-400">Estimated Tax</span>
-        <span className="font-medium text-gray-900 dark:text-white">
-          ${tax.toFixed(2)}
-        </span>
       </div>
 
       {/* Coupon Code */}

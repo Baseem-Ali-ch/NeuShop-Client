@@ -23,7 +23,7 @@ import {
   fetchAddresses,
   saveAddress,
   setDefaultAddress,
-} from "@/lib/accountApi";
+} from "@/lib/user/accountApi";
 import { Address } from "@/types/address";
 import { addressSchema } from "@/lib/schemad/addressSchema";
 

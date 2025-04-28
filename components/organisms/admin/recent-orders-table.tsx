@@ -1,12 +1,31 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/user/utils";
 
 // Mock data for recent orders
 const recentOrders = [
@@ -54,54 +73,56 @@ const recentOrders = [
     payment: "Credit Card",
     paymentStatus: "Refunded",
   },
-]
+];
 
 export default function RecentOrdersTable() {
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState("5")
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState("5");
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Delivered":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "Processing":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "Shipped":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
       case "Pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "Cancelled":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
-  }
+  };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "Paid":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "Pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "Refunded":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
-  }
+  };
 
   return (
     <Card className="neumorphic-card">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Recent Orders</CardTitle>
-          <CardDescription>Latest customer orders and their status</CardDescription>
+          <CardDescription>
+            Latest customer orders and their status
+          </CardDescription>
         </div>
         <Select
           value={perPage}
           onValueChange={(value) => {
-            setPerPage(value)
-            setPage(1)
+            setPerPage(value);
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-[100px]">
@@ -133,12 +154,14 @@ export default function RecentOrdersTable() {
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.customer}</TableCell>
-                  <TableCell className="hidden md:table-cell">{order.date}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {order.date}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        getStatusColor(order.status),
+                        getStatusColor(order.status)
                       )}
                     >
                       {order.status}
@@ -149,7 +172,7 @@ export default function RecentOrdersTable() {
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        getPaymentStatusColor(order.paymentStatus),
+                        getPaymentStatusColor(order.paymentStatus)
                       )}
                     >
                       {order.paymentStatus}
@@ -171,15 +194,25 @@ export default function RecentOrdersTable() {
             Showing <strong>5</strong> of <strong>25</strong> orders
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={page === 5} onClick={() => setPage(page + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 5}
+              onClick={() => setPage(page + 1)}
+            >
               Next
             </Button>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

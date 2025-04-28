@@ -6,7 +6,6 @@ import ProductHeader from "@/components/organisms/admin/products/product-header"
 import ProductFilters from "@/components/organisms/admin/products/product-filters"
 import ProductTable from "@/components/organisms/admin/products/product-table"
 import ProductModal from "@/components/organisms/admin/products/product-modal"
-import BulkEditPanel from "@/components/organisms/admin/products/bulk-edit-panel"
 import type { RootState } from "@/store/store"
 import { setSelectedProducts } from "@/store/slices/productSlice"
 
@@ -91,14 +90,6 @@ export default function ProductManagement() {
           onClose={() => setIsEditModalOpen(false)}
           product={currentProduct}
           mode="edit"
-        />
-      )}
-
-      {isBulkEditOpen && (
-        <BulkEditPanel
-          isOpen={isBulkEditOpen}
-          onClose={() => setIsBulkEditOpen(false)}
-          selectedCount={selectedProducts.length}
         />
       )}
     </div>

@@ -53,22 +53,6 @@ export default function CustomerFilters() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customerGroup">Customer Group</Label>
-            <Select defaultValue={customerGroups[0]}>
-              <SelectTrigger id="customerGroup">
-                <SelectValue placeholder="Select group" />
-              </SelectTrigger>
-              <SelectContent>
-                {customerGroups.map((group) => (
-                  <SelectItem key={group} value={group}>
-                    {group}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="status">Account Status</Label>
             <Select defaultValue={statuses[0]}>
               <SelectTrigger id="status">
@@ -82,32 +66,6 @@ export default function CustomerFilters() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Orders Count</Label>
-            <div className="flex items-center gap-2">
-              <Input type="number" placeholder="Min" className="w-1/2" min={0} />
-              <span className="text-gray-500">to</span>
-              <Input type="number" placeholder="Max" className="w-1/2" min={0} />
-            </div>
-          </div>
-
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <div className="flex justify-between">
-              <Label htmlFor="spending">
-                Total Spending Range (${spendingRange[0]} - ${spendingRange[1]})
-              </Label>
-            </div>
-            <Slider
-              id="spending"
-              min={0}
-              max={1000}
-              step={10}
-              value={spendingRange}
-              onValueChange={setSpendingRange}
-              className="pt-5"
-            />
           </div>
         </div>
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Eye, ShoppingBag, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/user/utils";
 import type { Product } from "@/types/product";
 
 interface ProductCardProps {
@@ -35,9 +35,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">
         <Image
-          src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
-            product.image || "/placeholder.svg"
-          }`}
+          src={product.image}
           alt={product.name}
           fill
           className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
@@ -78,8 +76,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Product Info */}
       <div className="mt-4 flex flex-col">
-      <Link href={`/products/${product.id}`}>
-          <h3 className="text-lg font-semibold truncate hover:text-primary">{product.name}</h3>
+        <Link href={`/products/${product.id}`}>
+          <h3 className="text-lg font-semibold truncate hover:text-primary">
+            {product.name}
+          </h3>
         </Link>
 
         <div className="mt-1 flex items-center">

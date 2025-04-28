@@ -10,7 +10,7 @@ import AuthLayout from "@/components/organisms/auth/auth-layout";
 import SocialLoginButtons from "@/components/molecules/auth/social-login-buttons";
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
-import { loginUser } from "@/lib/authApi";
+import { loginUser } from "@/lib/user/authApi";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -22,7 +22,6 @@ export default function LoginForm() {
 
   const router = useRouter();
   const dispatch = useAppDispatch();
-
 
   // handle login submit functionality
   const handleSubmit = async (e: React.FormEvent) => {

@@ -12,7 +12,7 @@ import PasswordStrengthIndicator from "@/components/molecules/auth/password-stre
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
 import { constructFromSymbol } from "date-fns/constants";
-import { registerUser } from "@/lib/authApi";
+import { registerUser } from "@/lib/user/authApi";
 
 export default function RegisterForm() {
   const [firstName, setFirstName] = useState("");
@@ -78,7 +78,8 @@ export default function RegisterForm() {
       const result = await registerUser(formData);
 
       if (!result.success) {
-        throw new Error(result.message || "Registration Failed");
+       setError(result.message || "Registration Failed");
+       return
       }
 
       router.push(`/auth/two-factor/verify?email=${encodeURIComponent(email)}`);

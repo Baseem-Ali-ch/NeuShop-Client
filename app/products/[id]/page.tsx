@@ -86,6 +86,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const relatedProducts = await fetchRelatedProducts(product.categoryId, product._id);
 
   const mappedProduct = {
+    _id: { $oid: product._id },
     id: product._id,
     name: product.name,
     description: product.description,
@@ -96,10 +97,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
     stock: product.stock,
     categoryId: product.categoryId,
     brandId: product.brandId,
-    colors: product.colors || [],
-    sizes: product.sizes || [],
-    category: product.category || "Unknown",
+    variants: product.variants || [], // Include variants
     status: product.stock > 0 ? "active" : "out-of-stock",
+    sku: product.sku || `SKU-${product._id.padStart(6, "0")}`,
   };
 
   return <ProductDetail product={mappedProduct} relatedProducts={relatedProducts} />;

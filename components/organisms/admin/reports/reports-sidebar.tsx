@@ -1,57 +1,93 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useDispatch, useSelector } from "react-redux"
-import type { RootState } from "@/store/store"
-import { setActiveReportCategory } from "@/store/slices/reportsSlice"
-import { BarChart3, ShoppingBag, Users, Package, Receipt, TrendingUp, PieChart, Save, Search } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import { setActiveReportCategory } from "@/store/slices/reportsSlice";
+import {
+  BarChart3,
+  ShoppingBag,
+  Users,
+  Package,
+  Receipt,
+  TrendingUp,
+  PieChart,
+  Save,
+  Search,
+} from "lucide-react";
+import { cn } from "@/lib/user/utils";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface SidebarItemProps {
-  icon: React.ReactNode
-  label: string
-  value: string
-  active: boolean
-  onClick: () => void
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  active: boolean;
+  onClick: () => void;
 }
 
-function SidebarItem({ icon, label, value, active, onClick }: SidebarItemProps) {
+function SidebarItem({
+  icon,
+  label,
+  value,
+  active,
+  onClick,
+}: SidebarItemProps) {
   return (
     <button
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 w-full px-4 py-3 text-left transition-colors rounded-md",
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
       {icon}
       <span>{label}</span>
     </button>
-  )
+  );
 }
 
 export default function ReportsSidebar() {
-  const dispatch = useDispatch()
-  const { activeReportCategory } = useSelector((state: RootState) => state.reports)
-  const [searchQuery, setSearchQuery] = useState("")
+  const dispatch = useDispatch();
+  const { activeReportCategory } = useSelector(
+    (state: RootState) => state.reports
+  );
+  const [searchQuery, setSearchQuery] = useState("");
 
   const reportCategories = [
     { icon: <BarChart3 size={18} />, label: "Sales Reports", value: "sales" },
-    { icon: <ShoppingBag size={18} />, label: "Product Reports", value: "products" },
-    { icon: <Users size={18} />, label: "Customer Reports", value: "customers" },
-    { icon: <Package size={18} />, label: "Inventory Reports", value: "inventory" },
+    {
+      icon: <ShoppingBag size={18} />,
+      label: "Product Reports",
+      value: "products",
+    },
+    {
+      icon: <Users size={18} />,
+      label: "Customer Reports",
+      value: "customers",
+    },
+    {
+      icon: <Package size={18} />,
+      label: "Inventory Reports",
+      value: "inventory",
+    },
     { icon: <Receipt size={18} />, label: "Tax Reports", value: "tax" },
-    { icon: <TrendingUp size={18} />, label: "Marketing Reports", value: "marketing" },
+    {
+      icon: <TrendingUp size={18} />,
+      label: "Marketing Reports",
+      value: "marketing",
+    },
     { icon: <PieChart size={18} />, label: "Custom Reports", value: "custom" },
     { icon: <Save size={18} />, label: "Saved Reports", value: "saved" },
-  ]
+  ];
 
   const filteredCategories = reportCategories.filter((category) =>
-    category.label.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+    category.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-64 border-r border-border bg-card p-4 overflow-y-auto hidden md:block">
@@ -81,5 +117,5 @@ export default function ReportsSidebar() {
         ))}
       </nav>
     </div>
-  )
+  );
 }

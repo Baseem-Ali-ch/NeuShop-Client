@@ -6,7 +6,6 @@ import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { RootState } from "@/store/store";
-import { updateTotals } from "@/store/slices/cartSlice";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -34,11 +33,8 @@ export default function OrderSummary({
     }
   };
 
-  // Calculate tax (example: 8%)
-  const tax = subtotal * 0.08;
-
   // Calculate total
-  const total = subtotal + getShippingCost() + tax;
+  const total = subtotal + getShippingCost();
 
 //   useEffect(() => {
 //     dispatch(updateTotals({ subtotal, total: subtotal + getShippingCost() + tax }));
@@ -95,10 +91,8 @@ export default function OrderSummary({
                   >
                     <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden flex-shrink-0">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
-                          item.image || "/placeholder.svg"
-                        }`}
-                        alt={item.name}
+                        src={item.productId.images[0]}
+                        alt={item.productId.name}
                         fill
                         className="object-cover object-center"
                       />
@@ -108,7 +102,7 @@ export default function OrderSummary({
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                        {item.name}
+                        {item.productId.name}
                       </h4>
                       {(item.color || item.size) && (
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -126,10 +120,10 @@ export default function OrderSummary({
                       )}
                       <div className="flex justify-between mt-1">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ${item.price.toFixed(2)}
+                          ${item.productId.price.toFixed(2)}
                         </p>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ${(item.productId.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>

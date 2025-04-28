@@ -1,134 +1,100 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Product } from '@/types/product';
 
 export interface CartItem {
-  id: string | number;
-  name: string;
-  price: number;
+  id: string;
   quantity: number;
-  image: string;
-  variant?: string;
-  size?: string;
   color?: string;
+  size?: string;
+  productId: {
+    name: string;
+    price: number;
+    images: string[];
+  };
 }
 
 interface CartState {
   items: CartItem[];
-  subtotal: number;
-  shipping: number;
-  tax: number;
   total: number;
-  discount: number;
-  couponCode: string | null;
 }
 
 const initialState: CartState = {
   items: [],
-  subtotal: 0,
-  shipping: 0,
-  tax: 0,
   total: 0,
-  discount: 0,
-  couponCode: null,
 };
 
-export const cartSlice = createSlice({
-  name: "cart",
+const cartSlice = createSlice({
+  name: 'cart',
   initialState,
   reducers: {
     addItem: (state, action: PayloadAction<CartItem>) => {
       const existingItem = state.items.find(
         (item) =>
           item.id === action.payload.id &&
-          item.variant === action.payload.variant &&
-          item.size === action.payload.size &&
-          item.color === action.payload.color
+          item.color === action.payload.color &&
+          item.size === action.payload.size
       );
-
       if (existingItem) {
         existingItem.quantity += action.payload.quantity;
       } else {
         state.items.push(action.payload);
       }
-
-      // Recalculate totals
-      state.subtotal = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+      state.total = state.items.reduce(
+        (sum, item) => sum + item.productId.price * item.quantity,
         0
       );
-      state.tax = state.subtotal * 0.1; // Assuming 10% tax
-      state.total =
-        state.subtotal + state.shipping + state.tax - state.discount;
     },
-    removeItem: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter((item) => item.id !== action.payload);
-
-      // Recalculate totals
-      state.subtotal = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      );
-      state.tax = state.subtotal * 0.1; // Assuming 10% tax
-      state.total =
-        state.subtotal + state.shipping + state.tax - state.discount;
-    },
-    updateQuantity: (
+    updateItemQuantity: (
       state,
-      action: PayloadAction<{ id: string; quantity: number }>
+      action: PayloadAction<{ id: string; quantity: number; color?: string; size?: string }>
     ) => {
-      const item = state.items.find((item) => item.id === action.payload.id);
+      const item = state.items.find(
+        (item) =>
+          item.id === action.payload.id &&
+          item.color === action.payload.color &&
+          item.size === action.payload.size
+      );
       if (item) {
         item.quantity = action.payload.quantity;
+        if (item.quantity <= 0) {
+          state.items = state.items.filter((i) => i !== item);
+        }
+        state.total = state.items.reduce(
+          (sum, item) => sum + item.productId.price * item.quantity,
+          0
+        );
       }
-
-      // Recalculate totals
-      state.subtotal = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+    },
+    removeItem: (
+      state,
+      action: PayloadAction<{ id: string; color?: string; size?: string }>
+    ) => {
+      state.items = state.items.filter(
+        (item) =>
+          !(
+            item.id === action.payload.id &&
+            item.color === action.payload.color &&
+            item.size === action.payload.size
+          )
+      );
+      state.total = state.items.reduce(
+        (sum, item) => sum + item.productId.price * item.quantity,
         0
       );
-      state.tax = state.subtotal * 0.1; // Assuming 10% tax
-      state.total =
-        state.subtotal + state.shipping + state.tax - state.discount;
     },
     clearCart: (state) => {
       state.items = [];
-      state.subtotal = 0;
-      state.tax = 0;
       state.total = 0;
-      state.discount = 0;
-      state.couponCode = null;
     },
-    applyCoupon: (
-      state,
-      action: PayloadAction<{ code: string; discount: number }>
-    ) => {
-      state.couponCode = action.payload.code;
-      state.discount = action.payload.discount;
-      state.total =
-        state.subtotal + state.shipping + state.tax - state.discount;
-    },
-    updateShipping: (state, action: PayloadAction<number>) => {
-      state.shipping = action.payload;
-      state.total =
-        state.subtotal + state.shipping + state.tax - state.discount;
-    },
-    updateTotals: (
-      state,
-      action: PayloadAction<{ subtotal: number; total: number }>
-    ) => {
-      state.subtotal = action.payload.subtotal;
-      state.total = action.payload.total;
+    setCart: (state, action: PayloadAction<CartState>) => {
+      state.items = action.payload.items;
+      state.total = action.payload.items.reduce(
+        (sum, item) => sum + item.productId.price * item.quantity,
+        0
+      );
     },
   },
 });
 
-export const {
-  updateTotals,
-  addItem,
-  removeItem,
-  updateQuantity,
-  clearCart,
-  applyCoupon,
-  updateShipping,
-} = cartSlice.actions;
-
+export const { addItem, updateItemQuantity, removeItem, clearCart, setCart } = cartSlice.actions;
 export default cartSlice.reducer;

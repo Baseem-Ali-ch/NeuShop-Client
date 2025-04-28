@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/molecules/product-card";
 import ProductCardSkeleton from "@/components/molecules/product-card-skeleton";
-import { fetchProductsUser } from "@/lib/api";
 import type { Product } from "@/types/product";
+import { fetchProductsUser } from "@/lib/user/productApi";
 
 interface ProductGridProps {
   products?: Product[];
@@ -21,7 +21,7 @@ export default function ProductGrid({ isLoading = false }: ProductGridProps) {
         const data = await fetchProductsUser();
         console.log(
           "Fetched products:",
-          data.products.map((p: any) => ({ id: p._id, name: p.name }))
+          data.products.map((p: any) => (p))
         );
         const mappedProducts = data.products.map((product: any) => ({
           id: product._id,

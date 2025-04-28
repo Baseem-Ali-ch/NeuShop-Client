@@ -18,29 +18,16 @@ export default function CustomerHeader({ onAddCustomer, onToggleFilters, isFilte
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Customers</h1>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button onClick={onAddCustomer} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
-                Import/Export <ChevronDown className="ml-2 h-4 w-4" />
+                Export <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem className="cursor-pointer">
-                <Upload className="mr-2 h-4 w-4" /> Import Customers
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Download className="mr-2 h-4 w-4" /> Export All
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Download className="mr-2 h-4 w-4" /> Export Selected
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <Download className="mr-2 h-4 w-4" /> Export as CSV
+                <Download className="mr-2 h-4 w-4" /> Export as PDF
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
                 <Download className="mr-2 h-4 w-4" /> Export as Excel

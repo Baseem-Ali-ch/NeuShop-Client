@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useDispatch, useSelector } from "react-redux"
+import { useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import {
   BarChart3,
   Box,
@@ -18,24 +18,24 @@ import {
   ShoppingBag,
   Tag,
   Users,
-} from "lucide-react"
-import type { RootState } from "@/store/store"
-import { closeSidebar, toggleSidebar } from "@/store/slices/uiSlice"
-import { cn } from "@/lib/utils"
-import { useIsMobile } from "@/hooks/use-mobile"
+} from "lucide-react";
+import type { RootState } from "@/store/store";
+import { closeSidebar, toggleSidebar } from "@/store/slices/uiSlice";
+import { cn } from "@/lib/user/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarItemProps {
-  icon: React.ElementType
-  label: string
-  href: string
-  isActive?: boolean
-  hasSubmenu?: boolean
-  isSubmenuOpen?: boolean
-  onClick?: () => void
+  icon: React.ElementType;
+  label: string;
+  href: string;
+  isActive?: boolean;
+  hasSubmenu?: boolean;
+  isSubmenuOpen?: boolean;
+  onClick?: () => void;
   submenuItems?: Array<{
-    label: string
-    href: string
-  }>
+    label: string;
+    href: string;
+  }>;
 }
 
 function SidebarItem({
@@ -56,7 +56,7 @@ function SidebarItem({
           "flex items-center py-2 px-4 rounded-lg text-sm font-medium transition-all",
           isActive
             ? "bg-primary/10 text-primary shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.5)]"
-            : "hover:bg-muted",
+            : "hover:bg-muted"
         )}
         onClick={onClick}
       >
@@ -64,7 +64,11 @@ function SidebarItem({
         <span>{label}</span>
         {hasSubmenu && (
           <div className="ml-auto">
-            {isSubmenuOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {isSubmenuOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
           </div>
         )}
       </Link>
@@ -82,20 +86,20 @@ function SidebarItem({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default function AdminSidebar() {
-  const pathname = usePathname()
-  const dispatch = useDispatch()
-  const isMobile = useIsMobile()
-  const isSidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen)
+  const pathname = usePathname();
+  const dispatch = useDispatch();
+  const isMobile = useIsMobile();
+  const isSidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
   useEffect(() => {
     if (isMobile && isSidebarOpen) {
-      dispatch(closeSidebar())
+      dispatch(closeSidebar());
     }
-  }, [pathname, isMobile, isSidebarOpen, dispatch])
+  }, [pathname, isMobile, isSidebarOpen, dispatch]);
 
   const sidebarItems = [
     {
@@ -152,13 +156,13 @@ export default function AdminSidebar() {
       href: "/admin/settings",
       isActive: pathname.startsWith("/admin/settings"),
     },
-  ]
+  ];
 
   return (
     <div
       className={cn(
         "fixed inset-y-0 left-0 z-20 w-64 transform bg-background border-r border-border pt-16 transition-transform duration-200 ease-in-out",
-        isSidebarOpen || !isMobile ? "translate-x-0" : "-translate-x-full",
+        isSidebarOpen || !isMobile ? "translate-x-0" : "-translate-x-full"
       )}
     >
       <div className="h-full overflow-y-auto py-4 px-3">
@@ -176,8 +180,11 @@ export default function AdminSidebar() {
         </nav>
       </div>
       {isMobile && isSidebarOpen && (
-        <div className="fixed inset-0 z-10 bg-black/50" onClick={() => dispatch(toggleSidebar())} />
+        <div
+          className="fixed inset-0 z-10 bg-black/50"
+          onClick={() => dispatch(toggleSidebar())}
+        />
       )}
     </div>
-  )
+  );
 }

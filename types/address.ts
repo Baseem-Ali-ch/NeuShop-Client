@@ -9,4 +9,8 @@ export interface Address {
   country: string;
   phoneNumber: string;
   isDefault: boolean;
+  id: string;
+  apartment: string
+  zipCode: string
+  address: string
 }

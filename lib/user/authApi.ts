@@ -46,7 +46,10 @@ export const registerUser = async (formData: {
         },
       }
     );
-
+    if (!result.ok) {
+      const errorData = await result.json();
+      throw new Error(errorData.message || "Registration Failed");
+    }
     return { success: true };
   } catch (error: any) {
     console.error("Registration API error:", error);

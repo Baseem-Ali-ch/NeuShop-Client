@@ -1,35 +1,37 @@
-"use client"
+"use client";
 
-import { useRef } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import ProductCard from "@/components/molecules/product-card"
-import { cn } from "@/lib/utils"
-import type { Product } from "@/types/product"
+import { useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import ProductCard from "@/components/molecules/product-card";
+import { cn } from "@/lib/user/utils";
+import type { Product } from "@/types/product";
 
 interface RelatedProductsProps {
-  products: Product[]
+  products: Product[];
 }
 
 export default function RelatedProducts({ products }: RelatedProductsProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" })
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" });
     }
-  }
+  };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" })
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" });
     }
-  }
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-light text-gray-900 dark:text-white">Related Products</h2>
+        <h2 className="text-2xl font-light text-gray-900 dark:text-white">
+          Related Products
+        </h2>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -54,7 +56,10 @@ export default function RelatedProducts({ products }: RelatedProductsProps) {
 
       <div
         ref={scrollContainerRef}
-        className={cn("flex overflow-x-auto scrollbar-hide gap-6 pb-4", "scroll-smooth snap-x snap-mandatory")}
+        className={cn(
+          "flex overflow-x-auto scrollbar-hide gap-6 pb-4",
+          "scroll-smooth snap-x snap-mandatory"
+        )}
       >
         {products.map((product) => (
           <div
@@ -64,7 +69,7 @@ export default function RelatedProducts({ products }: RelatedProductsProps) {
               "rounded-xl overflow-hidden",
               "backdrop-blur-md bg-white/30 dark:bg-black/30",
               "border border-white/20 dark:border-gray-800/50",
-              "shadow-lg",
+              "shadow-lg"
             )}
           >
             <div className="p-4">
@@ -74,5 +79,5 @@ export default function RelatedProducts({ products }: RelatedProductsProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

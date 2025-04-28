@@ -1,21 +1,50 @@
-"use client"
+"use client";
 
-import { useDispatch, useSelector } from "react-redux"
-import type { RootState } from "@/store/store"
-import { setGroupBy, setViewMode, toggleFilterPanel } from "@/store/slices/reportsSlice"
-import { Filter, BarChart3, Table2, Download, Save, Clock, FileSpreadsheet, FileText, FileImage } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import {
+  setGroupBy,
+  setViewMode,
+  toggleFilterPanel,
+} from "@/store/slices/reportsSlice";
+import {
+  Filter,
+  BarChart3,
+  Table2,
+  Download,
+  Save,
+  Clock,
+  FileSpreadsheet,
+  FileText,
+  FileImage,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/user/utils";
 
 interface ReportCustomizationBarProps {
-  onExport: () => void
+  onExport: () => void;
 }
 
-export default function ReportCustomizationBar({ onExport }: ReportCustomizationBarProps) {
-  const dispatch = useDispatch()
-  const { groupBy, viewMode, showFilterPanel } = useSelector((state: RootState) => state.reports)
+export default function ReportCustomizationBar({
+  onExport,
+}: ReportCustomizationBarProps) {
+  const dispatch = useDispatch();
+  const { groupBy, viewMode, showFilterPanel } = useSelector(
+    (state: RootState) => state.reports
+  );
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 mb-6 p-3 bg-muted/40 border rounded-lg">
@@ -32,7 +61,10 @@ export default function ReportCustomizationBar({ onExport }: ReportCustomization
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Group by:</span>
-          <Select value={groupBy} onValueChange={(value) => dispatch(setGroupBy(value))}>
+          <Select
+            value={groupBy}
+            onValueChange={(value) => dispatch(setGroupBy(value))}
+          >
             <SelectTrigger className="h-9 w-[130px]">
               <SelectValue placeholder="Select grouping" />
             </SelectTrigger>
@@ -50,7 +82,10 @@ export default function ReportCustomizationBar({ onExport }: ReportCustomization
           <Button
             variant="ghost"
             size="sm"
-            className={cn("rounded-none border-r h-9 px-3", viewMode === "chart" && "bg-muted")}
+            className={cn(
+              "rounded-none border-r h-9 px-3",
+              viewMode === "chart" && "bg-muted"
+            )}
             onClick={() => dispatch(setViewMode("chart"))}
           >
             <BarChart3 className="h-4 w-4" />
@@ -58,7 +93,10 @@ export default function ReportCustomizationBar({ onExport }: ReportCustomization
           <Button
             variant="ghost"
             size="sm"
-            className={cn("rounded-none h-9 px-3", viewMode === "table" && "bg-muted")}
+            className={cn(
+              "rounded-none h-9 px-3",
+              viewMode === "table" && "bg-muted"
+            )}
             onClick={() => dispatch(setViewMode("table"))}
           >
             <Table2 className="h-4 w-4" />
@@ -109,5 +147,5 @@ export default function ReportCustomizationBar({ onExport }: ReportCustomization
         </Button>
       </div>
     </div>
-  )
+  );
 }

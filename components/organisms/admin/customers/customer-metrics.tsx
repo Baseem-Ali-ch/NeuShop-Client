@@ -19,21 +19,7 @@ export default function CustomerMetrics() {
       isPositive: true,
       icon: UserPlus,
       color: "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300",
-    },
-    {
-      title: "Average Lifetime Value",
-      value: "$328.42",
-      icon: DollarSign,
-      color: "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300",
-    },
-    {
-      title: "Retention Rate",
-      value: "68.7%",
-      change: "+2.4%",
-      isPositive: true,
-      icon: Percent,
-      color: "bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-300",
-    },
+    }
   ]
 
   return (

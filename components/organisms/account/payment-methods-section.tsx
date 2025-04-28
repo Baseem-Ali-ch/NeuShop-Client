@@ -25,7 +25,7 @@ import {
   fetchPaymentMethods,
   savePaymentMethod,
   setDefaultPaymentMethod,
-} from "@/lib/accountApi";
+} from "@/lib/user/accountApi";
 
 type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
 

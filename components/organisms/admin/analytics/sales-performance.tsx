@@ -1,17 +1,36 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
-import { ArrowDownIcon, ArrowUpIcon, TrendingDown, TrendingUp } from "lucide-react"
-import { cn } from "@/lib/utils"
-import type { DateRange } from "react-day-picker"
-import { useSelector } from "react-redux"
-import type { RootState } from "@/store/store"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import { cn } from "@/lib/user/utils";
+import type { DateRange } from "react-day-picker";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
 
 interface SalesPerformanceProps {
-  dateRange: DateRange
-  compareMode: boolean
+  dateRange: DateRange;
+  compareMode: boolean;
 }
 
 // Mock data for top selling products
@@ -61,24 +80,34 @@ const topSellingProducts = [
     margin: 52,
     trend: -1.8,
   },
-]
+];
 
 // Mock data for top categories
 const topCategories = [
   { name: "Electronics", value: 45, color: "#4f46e5", change: 5.2 },
   { name: "Clothing", value: 25, color: "#0ea5e9", change: -2.1 },
-  { name: "Home & Kitchen", value: 15, color: '#8b5cf  value: 25, color: "#0ea5e9', change: -2.1 },
+  {
+    name: "Home & Kitchen",
+    value: 15,
+    color: '#8b5cf  value: 25, color: "#0ea5e9',
+    change: -2.1,
+  },
   { name: "Home & Kitchen", value: 15, color: "#8b5cf6", change: 3.7 },
   { name: "Beauty", value: 10, color: "#ec4899", change: 8.4 },
   { name: "Sports", value: 5, color: "#f59e0b", change: 1.2 },
-]
+];
 
-export default function SalesPerformance({ dateRange, compareMode }: SalesPerformanceProps) {
-  const { loading } = useSelector((state: RootState) => state.ui)
+export default function SalesPerformance({
+  dateRange,
+  compareMode,
+}: SalesPerformanceProps) {
+  const { loading } = useSelector((state: RootState) => state.ui);
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold tracking-tight">Sales Performance</h2>
+      <h2 className="text-xl font-semibold tracking-tight">
+        Sales Performance
+      </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="bg-white shadow-sm border border-gray-100">
           <CardHeader>
@@ -119,17 +148,27 @@ export default function SalesPerformance({ dateRange, compareMode }: SalesPerfor
                               alt={product.name}
                               className="h-10 w-10 rounded-md object-cover"
                             />
-                            <span className="font-medium truncate max-w-[180px]">{product.name}</span>
+                            <span className="font-medium truncate max-w-[180px]">
+                              {product.name}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{product.unitsSold}</TableCell>
-                        <TableCell className="text-right">${product.revenue.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{product.margin}%</TableCell>
+                        <TableCell className="text-right">
+                          {product.unitsSold}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${product.revenue.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {product.margin}%
+                        </TableCell>
                         <TableCell className="text-right">
                           <div
                             className={cn(
                               "flex items-center justify-end",
-                              product.trend > 0 ? "text-green-600" : "text-red-600",
+                              product.trend > 0
+                                ? "text-green-600"
+                                : "text-red-600"
                             )}
                           >
                             {product.trend > 0 ? (
@@ -165,26 +204,39 @@ export default function SalesPerformance({ dateRange, compareMode }: SalesPerfor
                     cy="50%"
                     outerRadius={80}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {topCategories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`${value}%`, "Percentage"]} />
+                  <Tooltip
+                    formatter={(value: number) => [`${value}%`, "Percentage"]}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             )}
             <div className="mt-4 space-y-2">
               {topCategories.map((category) => (
-                <div key={category.name} className="flex items-center justify-between">
+                <div
+                  key={category.name}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: category.color }}></div>
+                    <div
+                      className="w-3 h-3 rounded-full mr-2"
+                      style={{ backgroundColor: category.color }}
+                    ></div>
                     <span className="text-sm">{category.name}</span>
                   </div>
                   <div
-                    className={cn("flex items-center text-sm", category.change > 0 ? "text-green-600" : "text-red-600")}
+                    className={cn(
+                      "flex items-center text-sm",
+                      category.change > 0 ? "text-green-600" : "text-red-600"
+                    )}
                   >
                     {category.change > 0 ? (
                       <ArrowUpIcon className="h-3 w-3 mr-1" />
@@ -200,5 +252,5 @@ export default function SalesPerformance({ dateRange, compareMode }: SalesPerfor
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { updateUserDetails, updateUserPassword } from "@/lib/accountApi";
+import { updateUserDetails, updateUserPassword } from "@/lib/user/accountApi";
 
 // Form validation schemas
 const personalInfoSchema = z.object({

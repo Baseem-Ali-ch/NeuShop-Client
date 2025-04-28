@@ -47,7 +47,9 @@ import type { RootState } from "@/store/store";
 import { setSelectedProducts } from "@/store/slices/productSlice";
 import { mockProducts } from "@/data/mock-products";
 import { categories } from "@/data/mock-categories";
-import { fetchProducts } from "@/lib/api";
+import { fetchProducts } from "@/lib/admin/productApi";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductTableProps {
   searchTerm: string;
@@ -75,6 +77,7 @@ export default function ProductTable({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [editingName, setEditingName] = useState<{
     id: number;
     name: string;
@@ -83,14 +86,18 @@ export default function ProductTable({
   // Load products
   useEffect(() => {
     const loadProducts = async () => {
+      setIsLoading(true);
       try {
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const data = await fetchProducts();
         console.log("data", data);
-        setProducts(data.data); // Adjust based on your API response structure
+        setProducts(data.data);
         setFilteredProducts(data.data);
+        console.log("API response structure:", data.data[0]);
       } catch (error) {
         console.error("Error fetching products:", error);
-        // Optionally show a toast notification
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -267,18 +274,22 @@ export default function ProductTable({
     return "bg-green-500";
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "text-green-500";
-      case "draft":
-        return "text-amber-500";
-      case "out-of-stock":
-        return "text-red-500";
-      default:
-        return "text-muted-foreground";
-    }
+  const getStatusColor = (status: boolean) => {
+    return status
+      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
   };
+
+  if (isLoading) {
+    return (
+      <Card className="bg-white dark:bg-gray-800 p-6 text-center">
+        <div className="h-8 w-8 mx-auto rounded-full border-2 border-t-transparent border-gray-500 animate-spin" />
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          Loading customers...
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -287,18 +298,6 @@ export default function ProductTable({
           <Table>
             <TableHeader className="bg-background/50">
               <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={
-                      getCurrentPageItems().length > 0 &&
-                      getCurrentPageItems().every((product) =>
-                        selectedProducts.includes(product.id)
-                      )
-                    }
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Select all products"
-                  />
-                </TableHead>
                 <TableHead className="w-16">Image</TableHead>
                 <TableHead>
                   <div
@@ -306,13 +305,14 @@ export default function ProductTable({
                     onClick={() => handleSort("name")}
                   >
                     Product Name
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
-                    {sortConfig?.key === "name" &&
-                      (sortConfig.direction === "asc" ? (
-                        <ChevronUp className="ml-1 h-3 w-3" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-3 w-3" />
-                      ))}
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => handleSort("sku")}
+                  >
+                    SKU/ID
                   </div>
                 </TableHead>
                 <TableHead>
@@ -321,7 +321,6 @@ export default function ProductTable({
                     onClick={() => handleSort("categoryId")}
                   >
                     Category
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead>
@@ -330,7 +329,6 @@ export default function ProductTable({
                     onClick={() => handleSort("price")}
                   >
                     Price
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead>
@@ -339,7 +337,6 @@ export default function ProductTable({
                     onClick={() => handleSort("stock")}
                   >
                     Inventory
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead>
@@ -348,7 +345,6 @@ export default function ProductTable({
                     onClick={() => handleSort("status")}
                   >
                     Status
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -364,24 +360,13 @@ export default function ProductTable({
               ) : (
                 getCurrentPageItems().map((product) => (
                   <TableRow
-                    key={product.id}
+                    key={product._id}
                     className="hover:bg-background/40 transition-colors group"
                   >
                     <TableCell>
-                      <Checkbox
-                        checked={selectedProducts.includes(product.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectProduct(product.id, checked as boolean)
-                        }
-                        aria-label={`Select ${product.name}`}
-                      />
-                    </TableCell>
-                    <TableCell>
                       <div className="relative h-12 w-12 rounded-md overflow-hidden border border-border">
                         <Image
-                          src={`${process.env.NEXT_PUBLIC_BACKEND_API}${
-                            product.images[0] || "/placeholder.svg"
-                          }`}
+                          src={product.images[0] || "/placeholder.svg"}
                           alt={product.name}
                           fill
                           className="object-cover"
@@ -389,58 +374,29 @@ export default function ProductTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {editingName && editingName.id === product.id ? (
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            value={editingName.name}
-                            onChange={(e) =>
-                              setEditingName({
-                                ...editingName,
-                                name: e.target.value,
-                              })
-                            }
-                            className="h-8 py-1"
-                            autoFocus
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={handleNameSave}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={handleNameCancel}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div
-                          className="font-medium cursor-pointer hover:text-primary"
-                          onClick={() => handleNameEdit(product)}
-                        >
-                          {product.name}
-                        </div>
-                      )}
+                      <div className="font-medium cursor-pointer hover:text-primary">
+                        {product.name}
+                      </div>
+
                       <div className="text-xs text-muted-foreground line-clamp-1 mt-1">
                         {product.description}
                       </div>
                     </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {product.sku}
+                    </TableCell>
                     <TableCell>
-                      {categories[product.categoryId]?.name || "Unknown"}
+                      {categories.find(
+                        (c) => String(c.id) === product.categoryId
+                      )?.name || "Unknown"}
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">
-                        ${product.salePrice.toFixed(2)}
+                        ${product.price.toFixed(2)}
                       </div>
-                      {product.price && (
+                      {product.compareAtPrice && (
                         <div className="text-xs text-muted-foreground line-through">
-                          ${product.price.toFixed(2)}
+                          ${product.compareAtPrice.toFixed(2)}
                         </div>
                       )}
                     </TableCell>
@@ -464,16 +420,9 @@ export default function ProductTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={product.status === "active"}
-                          onCheckedChange={(checked) =>
-                            handleToggleStatus(product.id, checked)
-                          }
-                        />
-                        <span className={getStatusColor(product.status)}>
-                          {product.status?.charAt(0).toUpperCase() +
-                            product.status?.slice(1)}
-                        </span>
+                        <Badge className={getStatusColor(product.status)}>
+                          {product.status ? "Active" : "Draft"}
+                        </Badge>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

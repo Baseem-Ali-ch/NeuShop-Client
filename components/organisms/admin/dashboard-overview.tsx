@@ -1,18 +1,25 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { ArrowDownIcon, ArrowUpIcon, DollarSign, Package, ShoppingCart, Users } from "lucide-react"
-import { cn } from "@/lib/utils"
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  DollarSign,
+  Package,
+  ShoppingCart,
+  Users,
+} from "lucide-react";
+import { cn } from "@/lib/user/utils";
 
 interface StatCardProps {
-  title: string
-  value: string
+  title: string;
+  value: string;
   change: {
-    value: number
-    trend: "up" | "down"
-  }
-  icon: React.ReactNode
+    value: number;
+    trend: "up" | "down";
+  };
+  icon: React.ReactNode;
 }
 
 function StatCard({ title, value, change, icon }: StatCardProps) {
@@ -28,7 +35,7 @@ function StatCard({ title, value, change, icon }: StatCardProps) {
                 "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
                 change.trend === "up"
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
               )}
             >
               {change.trend === "up" ? (
@@ -38,13 +45,17 @@ function StatCard({ title, value, change, icon }: StatCardProps) {
               )}
               {Math.abs(change.value)}%
             </span>
-            <span className="ml-2 text-xs text-muted-foreground">vs last period</span>
+            <span className="ml-2 text-xs text-muted-foreground">
+              vs last period
+            </span>
           </div>
         </div>
-        <div className="rounded-full bg-primary/10 p-3 text-primary">{icon}</div>
+        <div className="rounded-full bg-primary/10 p-3 text-primary">
+          {icon}
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function DashboardOverview() {
@@ -73,13 +84,19 @@ export default function DashboardOverview() {
       change: { value: 1.2, trend: "down" as const },
       icon: <Package className="h-5 w-5" />,
     },
-  ]
+  ];
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
-        <StatCard key={stat.title} title={stat.title} value={stat.value} change={stat.change} icon={stat.icon} />
+        <StatCard
+          key={stat.title}
+          title={stat.title}
+          value={stat.value}
+          change={stat.change}
+          icon={stat.icon}
+        />
       ))}
     </div>
-  )
+  );
 }

@@ -14,26 +14,18 @@ import {
   ChevronUp,
   MoreHorizontal,
   Eye,
-  Edit,
   Printer,
-  Trash2,
+  Ban,
   Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import {
   Table,
   TableBody,
@@ -44,7 +36,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getOrders } from "@/lib/admin/orderApi";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
 
 interface OrderItem {
   id: number;
@@ -64,8 +64,8 @@ interface Order {
   };
   items: OrderItem[];
   total: number;
-  tax: number,
-  totalAmount: number,
+  tax: number;
+  totalAmount: number;
   paymentStatus: string;
   status: string;
 }
@@ -91,74 +91,40 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("admin_access_token");
-        console.log("Token:", token);
-        console.log("API URL:", process.env.NEXT_PUBLIC_BACKEND_API);
-        if (!token) {
-          throw new Error("No admin access token found");
+        const response = await getOrders();
+        console.log("API response:", response);
+
+        if (!response.orders || !Array.isArray(response.orders)) {
+          throw new Error("Invalid response format");
         }
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/orders`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("Response status:", response.status, response.statusText);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch orders: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("API response:", data);
-
-        // Validate data structure
-        if (!data.orders || !Array.isArray(data.orders)) {
-          throw new Error("Invalid response format: Expected data.orders to be an array");
-        }
-
-        const mappedOrders: Order[] = data.orders.map((order: any) => {
-          try {
-            return {
-              id: order.orderId.toString(),
-              date: order.createdAt,
-              customer: {
-                name: `${order.customer?.firstName || ""} ${order.customer?.lastName || ""}`.trim() || "Unknown",
-                email: order.customer?.email || "N/A",
-                avatar: order.customer?.avatar || "",
-              },
-              items: Array.isArray(order.items)
-                ? order.items.map((item: any, index: number) => ({
-                    id: item.id || index + 1,
-                    name: item.name || "Unknown Item",
-                    price: typeof item.price === "number" ? item.price : 0,
-                    quantity: typeof item.quantity === "number" ? item.quantity : 1,
-                    image: item.image || "/placeholder.svg",
-                  }))
-                : [],
-              total: typeof order.total === "number" ? order.total : 0,
-              tax: order.tax,
-              totalAmount: order.total + order.tax,
-              paymentStatus:
-                order.payment?.status === "succeeded" ? "paid" : order.payment?.status || "pending",
-              status: order.status || "pending",
-            };
-          } catch (mapErr) {
-            console.error(`Error mapping order ${order._id}:`, mapErr);
-            return null;
-          }
-        }).filter((order: Order | null): order is Order => order !== null);
+        const mappedOrders: Order[] = response.orders.map((order: any) => ({
+          id: order._id,
+          date: order.createdAt,
+          customer: {
+            name: order.paymentInfo?.cardholderName || "Unknown Customer",
+            email: "unknown@example.com", // Fetch from userId if available
+            avatar: "/placeholder.svg",
+          },
+          items: order.items.map((item: any, index: number) => ({
+            id: index + 1,
+            name: item.name || "Product",
+            price: item.price / 100 || 0, // Convert cents to dollars
+            quantity: item.quantity || 0,
+            image: item.image || "/placeholder.svg",
+          })),
+          total: order.subtotal / 100 || 0, // Convert cents to dollars
+          tax: order.tax / 100 || 0, // Convert cents to dollars
+          totalAmount: order.total / 100 || 0, // Convert cents to dollars
+          paymentStatus: order.paymentStatus || "pending",
+          status: order.status || "pending",
+        }));
 
         console.log("Mapped orders:", mappedOrders);
         setOrders(mappedOrders);
       } catch (err: any) {
         console.error("Fetch error:", err.message);
-        setError(err.message || "Unable to load orders. Please try again later.");
+        setError(err.message || "Unable to load orders");
       } finally {
         setIsLoading(false);
       }
@@ -173,22 +139,6 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
     } else {
       setSortField(field);
       setSortDirection("asc");
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      dispatch(selectAllOrders());
-    } else {
-      dispatch(deselectAllOrders());
-    }
-  };
-
-  const handleSelectOrder = (orderId: string, checked: boolean) => {
-    if (checked) {
-      dispatch(selectOrder(orderId));
-    } else {
-      dispatch(deselectOrder(orderId));
     }
   };
 
@@ -233,7 +183,9 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
     if (sortField === "id") {
       return direction * a.id.localeCompare(b.id);
     } else if (sortField === "date") {
-      return direction * (new Date(a.date).getTime() - new Date(b.date).getTime());
+      return (
+        direction * (new Date(a.date).getTime() - new Date(b.date).getTime())
+      );
     } else if (sortField === "total") {
       return direction * (a.total - b.total);
     }
@@ -246,15 +198,13 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentOrders = sortedOrders.slice(startIndex, endIndex);
 
-  const isAllSelected =
-    currentOrders.length > 0 &&
-    currentOrders.every((order) => selectedOrders.includes(order.id));
-
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="h-8 w-8 mx-auto rounded-full border-2 border-t-transparent border-gray-500 animate-spin" />
-        <p className="text-gray-600 dark:text-gray-400 mt-4">Loading orders...</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          Loading orders...
+        </p>
       </div>
     );
   }
@@ -280,14 +230,10 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={isAllSelected}
-                  onCheckedChange={handleSelectAll}
-                  aria-label="Select all orders"
-                />
-              </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("id")}>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => handleSort("id")}
+              >
                 <div className="flex items-center">
                   Order ID
                   {sortField === "id" &&
@@ -298,7 +244,10 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                     ))}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("date")}>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => handleSort("date")}
+              >
                 <div className="flex items-center">
                   Date & Time
                   {sortField === "date" &&
@@ -310,7 +259,10 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                 </div>
               </TableHead>
               <TableHead>Items</TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("total")}>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => handleSort("total")}
+              >
                 <div className="flex items-center">
                   Total
                   {sortField === "total" &&
@@ -332,29 +284,15 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                 key={order.id}
                 className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
               >
-                <TableCell>
-                  <Checkbox
-                    checked={selectedOrders.includes(order.id)}
-                    onCheckedChange={(checked) => handleSelectOrder(order.id, !!checked)}
-                    aria-label={`Select order ${order.id}`}
-                  />
-                </TableCell>
                 <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{format(new Date(order.date), "MMM dd, yyyy h:mm a")}</TableCell>
-                {/* <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={order.customer.avatar} alt={order.customer.name} />
-                      <AvatarFallback>{order.customer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{order.customer.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {order.customer.email}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell> */}
+                <TableCell>
+                  {order.date
+                    ? format(
+                        new Date(order.date),
+                        "MMM dd, yyyy h:mm a"
+                      )
+                    : "Unknown Date"}
+                </TableCell>
                 <TableCell>
                   <TooltipProvider>
                     <Tooltip>
@@ -367,7 +305,10 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                       <TooltipContent side="bottom" className="max-w-xs">
                         <div className="space-y-2">
                           {order.items.map((item, index) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div
+                              key={index}
+                              className="flex items-center gap-2"
+                            >
                               <div className="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center">
                                 <img
                                   src={item.image || "/placeholder.svg"}
@@ -376,7 +317,9 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                                 />
                               </div>
                               <div>
-                                <div className="text-sm font-medium">{item.name}</div>
+                                <div className="text-sm font-medium">
+                                  {item.name}
+                                </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {item.quantity} × ${item.price.toFixed(2)}
                                 </div>
@@ -388,15 +331,25 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
-                <TableCell className="font-medium">${order.totalAmount.toFixed(2)}</TableCell>
+                <TableCell className="font-medium">
+                  ${order.totalAmount.toFixed(2)}
+                </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={getPaymentStatusColor(order.paymentStatus)}>
-                    {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                  <Badge
+                    variant="outline"
+                    className={getPaymentStatusColor(order.paymentStatus)}
+                  >
+                    {order.paymentStatus.charAt(0).toUpperCase() +
+                      order.paymentStatus.slice(1)}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={getStatusColor(order.status)}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(order.status)}
+                  >
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -413,16 +366,12 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
                         View
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
                         <Printer className="mr-2 h-4 w-4" />
                         Print
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600 dark:text-red-400">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        <Ban className="mr-2 h-4 w-4" />
+                        Block
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -437,10 +386,15 @@ export default function OrderTable({ onViewOrder }: OrderTableProps) {
         <div className="flex items-center mb-4 sm:mb-0">
           <span className="text-sm text-gray-700 dark:text-gray-300">
             Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
-            <span className="font-medium">{Math.min(endIndex, orders.length)}</span> of{" "}
-            <span className="font-medium">{orders.length}</span> orders
+            <span className="font-medium">
+              {Math.min(endIndex, orders.length)}
+            </span>{" "}
+            of <span className="font-medium">{orders.length}</span> orders
           </span>
-          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => setItemsPerPage(Number(value))}
+          >
             <SelectTrigger className="h-8 w-[70px] ml-2">
               <SelectValue placeholder={itemsPerPage.toString()} />
             </SelectTrigger>

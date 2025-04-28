@@ -10,6 +10,7 @@ import AuthLayout from "@/components/organisms/auth/auth-layout";
 import SocialLoginButtons from "@/components/molecules/auth/social-login-buttons";
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/authSlice";
+import { loginUser } from "@/lib/admin/authApi";
 
 export default function AdminLoginForm() {
   const [email, setEmail] = useState("");
@@ -22,46 +23,68 @@ export default function AdminLoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const formData = {
-        email,
-        password,
-      };
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+  // handle login submit functionality
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError("");
+      setIsLoading(true);
+  
+      try {
+        const result = await loginUser(email, password);
+  
+        if (!result.success) {
+          setError(result.message || "An error occurred. Please try again.");
+          return;
         }
-      );
-      const result = await response.json();
-      localStorage.setItem("admin_access_token", result.accessToken);
-
-      if (!response.ok) {
-        setError(result.message || "An error occurred. Please try again.");
-        return;
-      } else {
-        localStorage.setItem('is_admin_loggedIn', 'true');
+  
+        localStorage.setItem("is_admin_loggedIn", "true");
         router.push("/admin");
+      } catch (err) {
+        setError("An error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   setIsLoading(true);
+
+  //   try {
+  //     const formData = {
+  //       email,
+  //       password,
+  //     };
+
+  //     // Simulate API call
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  //     const response = await fetch(
+  //       `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/auth/login`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify(formData),
+  //       }
+  //     );
+  //     const result = await response.json();
+
+  //     if (!response.ok) {
+  //       setError(result.message || "An error occurred. Please try again.");
+  //       return;
+  //     } else {
+  //       localStorage.setItem('is_admin_loggedIn', 'true');
+  //       router.push("/admin");
+  //     }
+  //   } catch (err) {
+  //     setError("An error occurred. Please try again.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
     <AuthLayout title="Welcome back">

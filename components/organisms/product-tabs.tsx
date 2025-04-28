@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Star, Truck, Package } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/user/utils";
 import type { Product } from "@/types/product";
 
 interface ProductTabsProps {

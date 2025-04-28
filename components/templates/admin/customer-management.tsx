@@ -6,10 +6,7 @@ import CustomerHeader from "@/components/organisms/admin/customers/customer-head
 import CustomerMetrics from "@/components/organisms/admin/customers/customer-metrics";
 import CustomerFilters from "@/components/organisms/admin/customers/customer-filters";
 import CustomerTable from "@/components/organisms/admin/customers/customer-table";
-import SegmentationTools from "@/components/organisms/admin/customers/segmentation-tools";
 import CustomerDetailsDrawer from "@/components/organisms/admin/customers/customer-details-drawer";
-import CustomerFormModal from "@/components/organisms/admin/customers/customer-form-modal";
-import BulkActionsBar from "@/components/organisms/admin/customers/bulk-actions-bar";
 import { selectSelectedCustomers } from "@/store/slices/customerSlice";
 
 export default function CustomerManagement() {
@@ -73,8 +70,6 @@ export default function CustomerManagement() {
         </div> */}
       </div>
 
-      {showBulkActions && <BulkActionsBar />}
-
       {detailsCustomerId && (
         <CustomerDetailsDrawer
           customerId={detailsCustomerId}
@@ -84,10 +79,6 @@ export default function CustomerManagement() {
             openEditModal(detailsCustomerId);
           }}
         />
-      )}
-
-      {isAddModalOpen && (
-        <CustomerFormModal customerId={editCustomerId} onClose={closeModal} />
       )}
     </div>
   );
